@@ -14,7 +14,7 @@ export default function Hero() {
         <img 
           src="/images/banners/banner-full-1.png"
           alt="Banner Khuyến Mãi" 
-          className="w-full h-auto object-cover min-h-[300px] md:min-h-[500px]"
+          className="w-400 h-auto object-cover min-h-[300px] md:min-h-[500px]"
         />
       </div>
 

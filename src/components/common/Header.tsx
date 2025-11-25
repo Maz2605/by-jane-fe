@@ -18,9 +18,9 @@ export default function Header() {
                         <Image
                             src="/images/logo/logo.png"
                             alt="Logo Shop"
-                            width={200}
+                            width={300}
                             height={100}
-                            className="h-24 w-auto object-contain" // Class này sẽ ghi đè kích thước ở trên
+                            className="h-26 w-auto object-contain" // Class này sẽ ghi đè kích thước ở trên
                             priority // Báo cho Next.js biết đây là ảnh quan trọng, cần load ngay lập tức
                         />
                     </Link>
@@ -57,11 +57,10 @@ export default function Header() {
                 <nav className="border-t border-gray-100 py-4 overflow-x-auto">
                     <ul className="flex items-center gap-6 md:gap-8 text-sm font-semibold text-gray-700 whitespace-nowrap">
                         <li><Link href="/" className="text-[#FF5E4D]">Trang chủ</Link></li>
-                        <li className="flex items-center gap-1 cursor-pointer hover:text-[#FF5E4D]">Nữ <ChevronDown size={14} /></li>
                         <li className="flex items-center gap-1 cursor-pointer hover:text-[#FF5E4D]">Nam <ChevronDown size={14} /></li>
+                        <li className="flex items-center gap-1 cursor-pointer hover:text-[#FF5E4D]">Nữ <ChevronDown size={14} /></li>
                         <li><Link href="/news" className="hover:text-[#FF5E4D]">Tin tức</Link></li>
                         <li><Link href="/contact" className="hover:text-[#FF5E4D]">Liên hệ</Link></li>
-                        <li><Link href="/store" className="hover:text-[#FF5E4D]">Hệ thống cửa hàng</Link></li>
                     </ul>
                 </nav>
 

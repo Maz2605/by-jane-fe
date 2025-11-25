@@ -1,9 +1,7 @@
-"use client";
-import { useState } from "react";
 import ProductCard from "./ProductCard";
-import SectionTitle from "../common/SectionTitle";
+import SectionTitle from "@/components/common/SectionTitle"; // Import cái tiêu đề tối ưu vào
 
-// DỮ LIỆU GIẢ (Dùng chung 1 ảnh p1.jpg)
+// DỮ LIỆU GIẢ (Giữ nguyên)
 const MOCK_PRODUCTS = [
   {
     id: 1,
@@ -41,34 +39,16 @@ const MOCK_PRODUCTS = [
   },
 ];
 
-const TABS = ["Hàng mới về", "Giá tốt", "Tìm kiếm nhiều nhất", "Demo"];
-
 export default function ProductList() {
-  const [activeTab, setActiveTab] = useState("Hàng mới về");
-
   return (
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4 md:px-10">
         
-        {/* TIÊU ĐỀ & TABS */}
-        <div className="text-center mb-10">
-          <SectionTitle title="Gợi ý hôm nay"/>
-
-          <div className="flex flex-wrap justify-center gap-4 md:gap-8 text-sm md:text-base text-gray-500 font-medium">
-            {TABS.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`pb-1 border-b-2 transition-all duration-300 ${
-                  activeTab === tab
-                    ? "text-black border-[#FF5E4D]"
-                    : "border-transparent hover:text-[#FF5E4D]"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+        {/* TIÊU ĐỀ (Đã dùng Component tối ưu) */}
+        <div className="mb-10">
+           {/* Nếu bạn chưa tạo SectionTitle thì dùng lại code cũ, 
+               còn nếu tạo rồi thì dùng dòng này cho gọn: */}
+           <SectionTitle title="Gợi ý hôm nay" />
         </div>
 
         {/* LƯỚI SẢN PHẨM */}
