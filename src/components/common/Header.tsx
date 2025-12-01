@@ -5,10 +5,6 @@ import { Search, Heart, User, ShoppingBag, ChevronDown } from 'lucide-react';
 export default function Header() {
     return (
         <header className="w-full font-sans shadow-sm">
-
-            {/* TOP BANNER: Màu cam */}
-
-
             <div className="container mx-auto px-4 md:px-10">
 
                 {/* MAIN HEADER */}
@@ -57,6 +53,7 @@ export default function Header() {
                 <nav className="border-t border-gray-100 py-4 overflow-x-auto">
                     <ul className="flex items-center gap-6 md:gap-8 text-sm font-semibold text-gray-700 whitespace-nowrap">
                         <li><Link href="/" className="text-[#FF5E4D]">Trang chủ</Link></li>
+                        <li><Link href="/products" className="hover:text-[#FF5E4D]">Sản phẩm</Link></li>
                         <li className="flex items-center gap-1 cursor-pointer hover:text-[#FF5E4D]">Nam <ChevronDown size={14} /></li>
                         <li className="flex items-center gap-1 cursor-pointer hover:text-[#FF5E4D]">Nữ <ChevronDown size={14} /></li>
                         <li><Link href="/news" className="hover:text-[#FF5E4D]">Tin tức</Link></li>

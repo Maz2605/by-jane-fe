@@ -1,5 +1,6 @@
 // src/services/product.ts
 import { fetchAPI, getStrapiMedia } from "./base";
+import qs from "qs";
 
 // 1. Hàm helper: Chuyên làm sạch dữ liệu thô từ Strapi
 // Lý do: Cấu trúc Strapi v4/v5 lồng nhau rất sâu và hay thay đổi (hoa/thường).
@@ -68,8 +69,64 @@ function shuffleArrayDaily(array: any[]) {
 }
 
 // --- CÁC HÀM CHÍNH (EXPORT RA NGOÀI DÙNG) ---
+//Lấy sản phẩm bth
+export async function getProducts(
+  categorySlug?: string, 
+  sort?: string, 
+  priceRange?: string,
+  page: number = 1,
+  pageSize: number = 12
+) {
+  
+  // 1. Chuẩn bị Object chứa tham số (Nhìn là hiểu ngay)
+  const query: any = {
+    populate: "*", // Lấy hết ảnh, relation
+    sort: (sort && sort !== "default") ? [sort] : ["createdAt:desc"],
+    pagination: {
+      page: page,
+      pageSize: pageSize,
+    },
+    filters: {}, // Khởi tạo bộ lọc rỗng
+  };
 
-// A. Lấy sản phẩm ngẫu nhiên cho Trang Chủ
+  // 2. Logic Lọc Danh mục (Thêm vào Object filters)
+  if (categorySlug) {
+    query.filters.category = {
+      slug: {
+        $eq: categorySlug,
+      },
+    };
+  }
+
+  // 3. Logic Lọc Giá
+  if (priceRange) {
+    const [min, max] = priceRange.split("-");
+    query.filters.price = {}; // Khởi tạo object giá
+    
+    if (min) query.filters.price.$gte = min;
+    if (max) query.filters.price.$lte = max;
+  }
+
+  // --- SAU NÀY MUỐN LỌC MÀU/SIZE THÌ VIẾT TIẾP Ở ĐÂY DỄ DÀNG ---
+  // if (color) query.filters.variants.color = { $eq: color };
+
+
+  // 4. Biến Object thành chuỗi URL thần thánh
+  // encodeValuesOnly: true để Strapi hiểu được các ký tự đặc biệt
+  const queryString = qs.stringify(query, { encodeValuesOnly: true });
+
+  // Gọi API với chuỗi vừa tạo
+  const data = await fetchAPI(`/products?${queryString}`);
+  
+  if (!data || !data.data) return { data: [], meta: null };
+  
+  return {
+    data: data.data.map(formatProductData),
+    meta: data.meta
+  };
+}
+
+// Lấy sản phẩm ngẫu nhiên cho Trang Chủ
 export async function getDailyRandomProducts() {
   const data = await fetchAPI("/products?populate=*&pagination[limit]=100");
   
@@ -79,7 +136,7 @@ export async function getDailyRandomProducts() {
   return shuffleArrayDaily(products);
 }
 
-// B. Lấy sản phẩm theo Danh mục (Trang Category)
+// Lấy sản phẩm theo Danh mục (Trang Category)
 export async function getProductsByCategory(slug: string) {
   // Lọc theo slug của category
   const data = await fetchAPI(
@@ -91,7 +148,7 @@ export async function getProductsByCategory(slug: string) {
   return data.data.map(formatProductData);
 }
 
-// C. Lấy chi tiết 1 sản phẩm (Trang Detail)
+// Lấy chi tiết 1 sản phẩm (Trang Detail)
 // Dùng cho trang /products/[id]
 export async function getProductById(id: string) {
   const data = await fetchAPI(`/products/${id}?populate=*`);
@@ -101,3 +158,4 @@ export async function getProductById(id: string) {
 
   return formatProductData(data.data);
 }
+
