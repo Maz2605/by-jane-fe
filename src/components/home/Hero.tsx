@@ -5,25 +5,18 @@ export default function Hero() {
     // Thêm pb-12 để tạo khoảng trống bên dưới do phần margin âm kéo lên
     <section className="bg-white-50 pb-12">
       
-      {/* PHẦN 1: BANNER ẢNH */}
-      <div className="w-full relative">
-        {/* LƯU Ý QUAN TRỌNG: 
-           Bạn CẦN CÓ file ảnh 'banner-full.png' trong thư mục 'public'
-           thì ảnh mới hiện ra nhé.
-        */}
-        <img 
-          src="/images/banners/banner-full-1.png"
-          alt="Banner Khuyến Mãi" 
-          className="w-400 h-auto object-cover min-h-[300px] md:min-h-[500px]"
-        />
+      <div className="container mx-auto px-4 md:px-10">
+        <div className="w-full relative rounded-2xl overflow-hidden shadow-sm"> {/* Thêm bo góc (rounded) cho đẹp */}
+          <img 
+            src="/images/banners/banner-full-1.png" 
+            alt="Banner Khuyến Mãi" 
+            className="w-full h-auto object-cover object-center min-h-[300px] md:min-h-[500px]"
+          />
+        </div>
       </div>
 
       {/* PHẦN 2: TRUST BAR (Thanh trắng trồi lên đè lên ảnh) */}
       <div className="container mx-auto px-4 md:px-10 relative z-10">
-        {/* 👉 KEY POINT: 
-           -mt-16 (mobile) và md:-mt-24 (desktop) 
-           chính là phần kéo nó trồi lên trên ảnh.
-        */}
         <div className="bg-white rounded-xl shadow-xl -mt-16 md:-mt-12 py-6 px-4 md:px-8 grid grid-cols-1 md:grid-cols-4 gap-6">
           
           {/* Item 1 */}

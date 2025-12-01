@@ -2,19 +2,28 @@ import Header from "@/components/common/Header";
 import Hero from "@/components/home/Hero";
 import CategoryList from "@/components/home/CategoryList";
 import ProductList from "@/components/product/ProductList";
-import SectionTitle from "@/components/common/SectionTitle";
 import FlashSale from "@/components/home/FlashSale";
 import Footer from "@/components/common/Footer";
-export default function Home() {
+
+import { getCategories } from "@/services/category";
+import { getDailyRandomProducts } from "@/services/product";
+import { getFlashSale } from "@/services/flash-sale";
+
+export default async function Home() {
+  const [categories, products, flashSaleData] = await Promise.all([
+    getCategories(),
+    getDailyRandomProducts(),
+    getFlashSale(),
+  ]);
+  const randomProducts = await getDailyRandomProducts();
   return (
     <main className="min-h-screen bg-white">
       <Header />
       <Hero/>
-      <FlashSale/>
-      <CategoryList/>
-      <ProductList/>
+      <FlashSale data = {flashSaleData}/>
+      <CategoryList data={categories}/>
+      <ProductList data={randomProducts} title="Gợi ý hôm nay" />
       <Footer/>
-    
     </main>
   );
 }

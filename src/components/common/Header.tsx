@@ -60,7 +60,7 @@ export default function Header() {
                         <li className="flex items-center gap-1 cursor-pointer hover:text-[#FF5E4D]">Nam <ChevronDown size={14} /></li>
                         <li className="flex items-center gap-1 cursor-pointer hover:text-[#FF5E4D]">Nữ <ChevronDown size={14} /></li>
                         <li><Link href="/news" className="hover:text-[#FF5E4D]">Tin tức</Link></li>
-                        <li><Link href="/contact" className="hover:text-[#FF5E4D]">Liên hệ</Link></li>
+                        <li><Link href="/Footer" className="hover:text-[#FF5E4D]">Liên hệ</Link></li>
                     </ul>
                 </nav>
 
