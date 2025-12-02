@@ -51,7 +51,7 @@ export default function RelatedProducts({ products }: { products: any[] }) {
         style={{ scrollBehavior: "smooth" }}
       >
         {products.map((product) => (
-          <div key={product.id} className="w-[45%] md:w-[30%] lg:w-[19%] snap-start flex-shrink-0 h-full">
+          <div key={product.id} className="w-[45%] md:w-[30%] lg:w-[19%] snap-start shrink-0 h-full">
             {/* ProductCard giữ nguyên logic hover của riêng nó */}
             <ProductCard product={product} />
           </div>

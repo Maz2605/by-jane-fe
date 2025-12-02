@@ -25,7 +25,7 @@ export default function CartItemRow({ item, isSelected, onSelect }: CartItemRowP
             checked={isSelected}
             onChange={() => onSelect(item.uniqueId)}
           />
-          <div className="relative w-20 h-20 border rounded overflow-hidden flex-shrink-0">
+          <div className="relative w-20 h-20 border rounded overflow-hidden shrink-0">
             <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
           </div>
           <div>
@@ -91,7 +91,7 @@ export default function CartItemRow({ item, isSelected, onSelect }: CartItemRowP
                 onChange={() => onSelect(item.uniqueId)}
             />
          </div>
-         <div className="w-20 h-20 border rounded overflow-hidden flex-shrink-0">
+         <div className="w-20 h-20 border rounded overflow-hidden shrink-0">
              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
          </div>
          <div className="flex-1 flex flex-col justify-between">

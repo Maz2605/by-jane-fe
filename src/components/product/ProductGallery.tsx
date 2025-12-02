@@ -65,7 +65,7 @@ export default function ProductGallery({ images }: { images: string[] }) {
     <div className="flex flex-col-reverse md:flex-row gap-4 h-fit select-none">
       
       {/* 1. THUMBNAILS (Giữ nguyên) */}
-      <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto scrollbar-hide md:max-h-[500px] w-full md:w-20 flex-shrink-0">
+      <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto scrollbar-hide md:max-h-[500px] w-full md:w-20 shrink-0">
         {imageList.map((img, idx) => (
           <div 
             key={idx} 

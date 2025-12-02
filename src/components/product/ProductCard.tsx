@@ -56,7 +56,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
           )}
 
           {/* Tên sản phẩm */}
-          <h3 className="text-gray-700 text-sm font-medium line-clamp-2 min-h-[40px] group-hover:text-[#FF5E4D] transition-colors">
+          <h3 className="text-gray-700 text-sm font-medium line-clamp-2 min-h-10 group-hover:text-[#FF5E4D] transition-colors">
             {product.name}
           </h3>
 

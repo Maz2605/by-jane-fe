@@ -155,14 +155,14 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                         setSelectedColor(v.color);
                         setSelectedSize(findFirstAvailableSize(v.color)); // Auto chọn size
                     }}
-                    className={`min-w-[80px] h-10 px-3 rounded border text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                    className={`min-w-20 h-10 px-3 rounded border text-sm font-medium transition-all flex items-center justify-center gap-2 ${
                         selectedColor === v.color
                         ? "bg-black text-white border-black shadow-md" // Active
                         : "bg-white text-gray-700 border-gray-200 hover:border-black" // Inactive
                     }`}
                     title={v.color}
                 >
-                    <span className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0" style={{ backgroundColor: v.colorCode }}></span>
+                    <span className="w-3 h-3 rounded-full border border-gray-300 shrink-0" style={{ backgroundColor: v.colorCode }}></span>
                     {v.color}
                 </button>
             ))}
@@ -186,11 +186,11 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                         key={idx}
                         onClick={() => s.stock > 0 && setSelectedSize(s.size)}
                         disabled={s.stock === 0}
-                        className={`min-w-[40px] h-10 px-3 rounded border text-sm font-medium transition-all ${
+                        className={`min-w-10 h-10 px-3 rounded border text-sm font-medium transition-all ${
                             selectedSize === s.size
                             ? "bg-black text-white border-black" 
                             : s.stock === 0 
-                                ? "bg-gray-50 text-gray-300 cursor-not-allowed border-gray-100 decoration-slice line-through" 
+                                ? "bg-gray-50 text-gray-300 cursor-not-allowed border-gray-100 box-decoration-slice line-through" 
                                 : "bg-white text-gray-700 border-gray-200 hover:border-black"
                         }`}
                     >
@@ -260,15 +260,15 @@ export default function ProductInfo({ product }: ProductInfoProps) {
         </h4>
         <ul className="space-y-1.5 text-xs text-gray-600">
             <li className="flex items-start gap-2">
-                <TicketPercent size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                <TicketPercent size={14} className="text-gray-400 mt-0.5 shrink-0" />
                 <span>Giảm thêm <strong className="text-[#FF5E4D]">10k</strong> cho đơn hàng từ 300k.</span>
             </li>
             <li className="flex items-start gap-2">
-                <TicketPercent size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                <TicketPercent size={14} className="text-gray-400 mt-0.5 shrink-0" />
                 <span>Giảm <strong className="text-[#FF5E4D]">5%</strong> tối đa 50k khi thanh toán qua VNPay.</span>
             </li>
             <li className="flex items-start gap-2">
-                <TicketPercent size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                <TicketPercent size={14} className="text-gray-400 mt-0.5 shrink-0" />
                 <span><strong className="text-[#FF5E4D]">Freeship</strong> cho đơn hàng nội thành Hà Nội.</span>
             </li>
         </ul>

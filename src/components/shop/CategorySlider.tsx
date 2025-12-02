@@ -23,7 +23,7 @@ export default function CategorySlider({ data }: { data: Category[] }) {
           <Link 
             key={cat.id} 
             href={`/category/${cat.slug}`} 
-            className="snap-start flex-shrink-0 flex flex-col items-center group min-w-[100px] cursor-pointer"
+            className="snap-start shrink-0 flex flex-col items-center group min-w-[100px] cursor-pointer"
           >
             {/* Vòng tròn ảnh */}
             <div className="w-24 h-24 rounded-full bg-gray-50 flex items-center justify-center mb-3 border-2 border-transparent group-hover:border-[#FF5E4D] transition-all shadow-sm">

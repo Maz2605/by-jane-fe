@@ -160,11 +160,11 @@ export default function ProductFilter({ categories }: { categories: Category[] }
                     <li key={range.value}>
                         <button 
                             onClick={() => handleFilterChange("price", range.value)}
-                            className={`block w-full text-left py-1.5 px-3 rounded-md transition-colors flex items-center gap-2 ${
+                            className={`block w-full text-left py-1.5 px-3 rounded-md transition-colors items-center gap-2 ${
                                 isActive ? "text-[#FF5E4D] font-bold bg-orange-50" : "text-gray-600 hover:bg-gray-50"
                             }`}
                         >
-                            <span className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${isActive ? 'border-[#FF5E4D]' : 'border-gray-300'}`}>
+                            <span className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isActive ? 'border-[#FF5E4D]' : 'border-gray-300'}`}>
                                 {isActive && <span className="w-2 h-2 rounded-full bg-[#FF5E4D]"></span>}
                             </span>
                             {range.label}
