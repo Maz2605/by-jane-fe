@@ -1,9 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Heart, RefreshCw, Truck, ShieldCheck, Phone, Facebook, Twitter, Instagram } from "lucide-react";
-import { TicketPercent, Gift } from "lucide-react";
+import { Heart, Gift, TicketPercent } from "lucide-react";
+import { useCartStore } from "@/store/useCartStore"; // Import Store
 
-// 1. Định nghĩa kiểu dữ liệu cho Biến thể (Variant)
 interface Variant {
   id: number;
   size: string;
@@ -12,90 +11,104 @@ interface Variant {
   stock: number;
 }
 
-// 2. Định nghĩa kiểu dữ liệu cho Sản phẩm nhận vào
 interface ProductInfoProps {
   product: {
+    id: number;
     name: string;
     price: number;
     originalPrice?: number;
     discount?: number;
-    variants: Variant[]; // Mảng chứa tất cả biến thể
+    image: string; // Ảnh đại diện để lưu vào giỏ
+    variants: Variant[];
   };
 }
 
 export default function ProductInfo({ product }: ProductInfoProps) {
   const [quantity, setQuantity] = useState(1);
   
-  // State lưu lựa chọn hiện tại của khách
+  // State lựa chọn
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  
-  // State lưu tồn kho hiện tại (để hiển thị và validate)
   const [currentStock, setCurrentStock] = useState(0);
 
-  // --- LOGIC XỬ LÝ DỮ LIỆU ---
+  // Lấy hàm thêm vào giỏ từ Store
+  const addToCart = useCartStore((state) => state.addToCart);
 
-  // A. Lọc ra danh sách Màu duy nhất (Unique Colors) để vẽ nút chọn Màu
-  // Dùng Map để lọc trùng theo tên màu
+  // 1. Xử lý danh sách màu duy nhất
   const uniqueColors = Array.from(new Map(product.variants.map(v => [v.color, v])).values());
 
-  // B. Hàm hỗ trợ: Tìm size đầu tiên CÓ HÀNG của một màu cụ thể
+  // 2. Hàm tìm Size đầu tiên có hàng của một màu
   const findFirstAvailableSize = (color: string) => {
     const variantsOfColor = product.variants.filter(v => v.color === color);
-    // Ưu tiên tìm cái nào stock > 0
     const available = variantsOfColor.find(v => v.stock > 0);
-    // Nếu có thì trả về size đó, nếu hết sạch thì trả về size đầu tiên (để hiện ra là hết hàng)
     return available ? available.size : (variantsOfColor[0]?.size || null);
   };
 
-  // C. useEffect 1: Chạy 1 lần khi mới vào trang -> Auto chọn màu/size đầu tiên
+  // 3. Auto chọn màu/size khi mới vào
   useEffect(() => {
     if (uniqueColors.length > 0) {
       const firstColor = uniqueColors[0].color;
       setSelectedColor(firstColor);
-      setSelectedSize(findFirstAvailableSize(firstColor)); 
+      setSelectedSize(findFirstAvailableSize(firstColor));
     }
-  }, []); // [] nghĩa là chỉ chạy 1 lần sau khi render
+  }, []);
 
-  // D. Tính toán danh sách Size khả dụng của Màu đang chọn
+  // 4. Lọc danh sách size theo màu đang chọn
   const availableSizes = product.variants
     .filter(v => v.color === selectedColor)
     .map(v => ({ size: v.size, stock: v.stock }));
 
-  // E. useEffect 2: Khi Màu hoặc Size thay đổi -> Cập nhật Tồn kho
+  // 5. Cập nhật tồn kho khi đổi lựa chọn
   useEffect(() => {
     const variant = product.variants.find(
       v => v.color === selectedColor && v.size === selectedSize
     );
-
     if (variant) {
       setCurrentStock(variant.stock);
-      // Nếu khách đang chọn số lượng 10 mà kho chỉ còn 5 -> Reset về 1 cho an toàn
       if (quantity > variant.stock) setQuantity(1);
     } else {
-      setCurrentStock(0); // Không tìm thấy biến thể -> Hết hàng
+      setCurrentStock(0);
     }
   }, [selectedColor, selectedSize]);
 
-  // F. Hàm tăng giảm số lượng mua
-  const handleQuantity = (type: "inc" | "dec") => {
-    if (type === "dec" && quantity > 1) setQuantity(quantity - 1);
-    if (type === "inc" && quantity < currentStock) setQuantity(quantity + 1);
+  // 6. Hàm xử lý thêm vào giỏ hàng
+  const handleAddToCart = () => {
+    if (!selectedColor || !selectedSize) {
+      alert("Vui lòng chọn màu sắc và kích cỡ");
+      return;
+    }
+
+    // Tạo ID duy nhất cho sản phẩm trong giỏ (VD: 1-Den-M)
+    const uniqueId = `${product.id}-${selectedColor}-${selectedSize}`;
+
+    addToCart({
+      id: product.id,
+      uniqueId: uniqueId,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      quantity: quantity,
+      maxStock: currentStock,
+      variant: {
+        color: selectedColor,
+        size: selectedSize
+      }
+    });
+
+    // Có thể thay bằng Toast thông báo đẹp hơn
+    alert("Đã thêm vào giỏ hàng!");
   };
 
   return (
     <div className="flex flex-col h-full">
       
-      {/* ------------------------------------------------------- */}
-      {/* 1. HEADER: TÊN SẢN PHẨM, GIÁ & TÌNH TRẠNG */}
-      {/* ------------------------------------------------------- */}
+      {/* --- HEADER: TÊN & GIÁ --- */}
       <div className="border-b border-gray-100 pb-6 mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 leading-tight">
             {product.name}
         </h1>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            {/* Giá tiền */}
             <div className="flex items-end gap-3">
                 <span className="text-3xl font-bold text-[#FF5E4D]">
                     {product.price.toLocaleString("vi-VN")}đ
@@ -105,10 +118,14 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                         {product.originalPrice.toLocaleString("vi-VN")}đ
                     </span>
                 )}
+                {product.discount && product.discount > 0 && (
+                    <span className="bg-red-100 text-[#FF5E4D] px-2 py-0.5 rounded text-sm font-bold mb-1">
+                        -{product.discount}%
+                    </span>
+                )}
             </div>
             
-            {/* Box thông tin nhỏ: Tình trạng & SKU */}
-            <div className="text-sm border border-gray-200 rounded p-2 bg-gray-50 min-w-[180px]">
+            <div className="text-sm border border-gray-200 rounded p-2 bg-gray-50 min-w-[150px]">
                 <p className="flex justify-between mb-1">
                     <span className="text-gray-500">Tình trạng:</span>
                     {currentStock > 0 ? (
@@ -117,45 +134,42 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                         <span className="text-red-500 font-bold">Hết hàng</span>
                     )}
                 </p>
+                <p className="flex justify-between">
+                    <span className="text-gray-500">Mã SKU:</span>
+                    <span className="text-gray-900 font-medium">--</span>
+                </p>
             </div>
         </div>
       </div>
 
-      {/* ------------------------------------------------------- */}
-      {/* 2. BỘ CHỌN MÀU SẮC (Dạng Nút Chữ Nhật + Chấm màu) */}
-      {/* ------------------------------------------------------- */}
+      {/* --- CHỌN MÀU SẮC (Giao diện ô chữ nhật) --- */}
       <div className="mb-6">
         <span className="block text-sm font-bold text-gray-700 mb-3">
             Màu sắc: <span className="font-normal text-gray-500">{selectedColor}</span>
         </span>
-        
         <div className="flex flex-wrap gap-3">
             {uniqueColors.map((v) => (
                 <button
                     key={v.id}
                     onClick={() => {
                         setSelectedColor(v.color);
-                        // Khi đổi màu -> Auto chọn lại size phù hợp ngay lập tức
-                        setSelectedSize(findFirstAvailableSize(v.color));
+                        setSelectedSize(findFirstAvailableSize(v.color)); // Auto chọn size
                     }}
-                    className={`min-w-[60px] h-10 px-3 rounded border text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                    className={`min-w-[80px] h-10 px-3 rounded border text-sm font-medium transition-all flex items-center justify-center gap-2 ${
                         selectedColor === v.color
-                        ? "bg-black text-white border-black shadow-md" // Active: Đen
-                        : "bg-white text-gray-700 border-gray-200 hover:border-black" // Inactive: Trắng
+                        ? "bg-black text-white border-black shadow-md" // Active
+                        : "bg-white text-gray-700 border-gray-200 hover:border-black" // Inactive
                     }`}
                     title={v.color}
                 >
-                    {/* Chấm màu nhỏ xíu để minh họa */}
-                    <span className="w-3 h-3 rounded-full border border-gray-300" style={{ backgroundColor: v.colorCode }}></span>
+                    <span className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0" style={{ backgroundColor: v.colorCode }}></span>
                     {v.color}
                 </button>
             ))}
         </div>
       </div>
 
-      {/* ------------------------------------------------------- */}
-      {/* 3. BỘ CHỌN KÍCH CỠ (SIZE) */}
-      {/* ------------------------------------------------------- */}
+      {/* --- CHỌN KÍCH CỠ --- */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-3">
             <span className="text-sm font-bold text-gray-700">
@@ -165,20 +179,19 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                 📏 Bảng kích thước
             </button>
         </div>
-
         <div className="flex flex-wrap gap-3">
             {availableSizes.length > 0 ? (
                 availableSizes.map((s, idx) => (
                     <button
                         key={idx}
                         onClick={() => s.stock > 0 && setSelectedSize(s.size)}
-                        disabled={s.stock === 0} // Hết hàng thì không cho bấm
+                        disabled={s.stock === 0}
                         className={`min-w-[40px] h-10 px-3 rounded border text-sm font-medium transition-all ${
                             selectedSize === s.size
-                            ? "bg-black text-white border-black" // Active
+                            ? "bg-black text-white border-black" 
                             : s.stock === 0 
-                                ? "bg-gray-50 text-gray-300 cursor-not-allowed border-gray-100 decoration-slice line-through" // Hết hàng
-                                : "bg-white text-gray-700 border-gray-200 hover:border-black" // Inactive
+                                ? "bg-gray-50 text-gray-300 cursor-not-allowed border-gray-100 decoration-slice line-through" 
+                                : "bg-white text-gray-700 border-gray-200 hover:border-black"
                         }`}
                     >
                         {s.size}
@@ -190,16 +203,13 @@ export default function ProductInfo({ product }: ProductInfoProps) {
         </div>
       </div>
 
-      {/* ------------------------------------------------------- */}
-      {/* 4. SỐ LƯỢNG & TỒN KHO */}
-      {/* ------------------------------------------------------- */}
+      {/* --- SỐ LƯỢNG --- */}
       <div className="mb-8 flex items-center gap-4">
         <span className="text-sm font-bold text-gray-700">Số lượng:</span>
         <div className="flex items-center border border-gray-300 rounded-md bg-white">
             <button 
-                onClick={() => handleQuantity("dec")} 
-                disabled={quantity <= 1}
-                className="w-9 h-9 flex items-center justify-center hover:bg-gray-100 text-gray-600 font-bold disabled:opacity-50"
+                onClick={() => setQuantity(q => Math.max(1, q - 1))} 
+                className="w-9 h-9 flex items-center justify-center hover:bg-gray-100 text-gray-600 font-bold"
             >
                 -
             </button>
@@ -210,9 +220,8 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                 className="w-10 h-9 text-center border-l border-r border-gray-300 outline-none text-gray-800 font-medium text-sm" 
             />
             <button 
-                onClick={() => handleQuantity("inc")} 
-                disabled={quantity >= currentStock}
-                className="w-9 h-9 flex items-center justify-center hover:bg-gray-100 text-gray-600 font-bold disabled:opacity-50"
+                onClick={() => setQuantity(q => Math.min(currentStock, q + 1))} 
+                className="w-9 h-9 flex items-center justify-center hover:bg-gray-100 text-gray-600 font-bold"
             >
                 +
             </button>
@@ -222,14 +231,13 @@ export default function ProductInfo({ product }: ProductInfoProps) {
         </span>
       </div>
 
-      {/* ------------------------------------------------------- */}
-      {/* 5. CÁC NÚT HÀNH ĐỘNG (Mua hàng) */}
-      {/* ------------------------------------------------------- */}
+      {/* --- CÁC NÚT MUA --- */}
       <div className="space-y-3 mb-8">
         <div className="flex gap-3">
             <button 
+                onClick={handleAddToCart}
                 disabled={!selectedSize || currentStock === 0}
-                className="flex-1 bg-black text-white py-3.5 rounded font-bold hover:bg-gray-800 transition-colors uppercase tracking-wide border-2 border-black disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:border-gray-400"
+                className="flex-1 bg-black text-white py-3.5 rounded font-bold hover:bg-gray-800 transition-colors uppercase tracking-wide border-2 border-black disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 Thêm vào giỏ
             </button>
@@ -239,55 +247,32 @@ export default function ProductInfo({ product }: ProductInfoProps) {
         </div>
         <button 
             disabled={!selectedSize || currentStock === 0}
-            className="w-full bg-[#FF5E4D] text-white py-3.5 rounded font-bold hover:bg-orange-600 transition-colors uppercase tracking-wide shadow-lg shadow-orange-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+            className="w-full bg-[#FF5E4D] text-white py-3.5 rounded font-bold hover:bg-orange-600 transition-colors uppercase tracking-wide shadow-lg shadow-orange-100 disabled:opacity-50 disabled:cursor-not-allowed"
         >
             {currentStock === 0 ? "Hết hàng" : "Mua ngay"}
         </button>
       </div>
 
-      
-      {/* -------------------------------------------------------
-      {/* 6. CAM KẾT & CHIA SẺ (Phần Footer nhỏ) */}
-      {/* ------------------------------------------------------- */}
-      {/* <div className="mt-auto space-y-4 text-sm text-gray-600 border-t border-gray-100 pt-6">
-        <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#FF5E4D] flex items-center justify-center text-white flex-shrink-0"><Truck size={16}/></div>
-            <div>
-                <strong className="block text-gray-800">Giao hàng toàn quốc</strong>
-                <span className="text-xs text-gray-500">Thanh toán (COD) khi nhận hàng</span>
-            </div>
-        </div>
-        <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#FF5E4D] flex items-center justify-center text-white flex-shrink-0"><ShieldCheck size={16}/></div>
-            <div>
-                <strong className="block text-gray-800">Miễn phí giao hàng</strong>
-                <span className="text-xs text-gray-500">Theo chính sách</span>
-            </div>
-        </div>
-        <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#FF5E4D] flex items-center justify-center text-white flex-shrink-0"><RefreshCw size={16}/></div>
-            <div>
-                <strong className="block text-gray-800">Đổi trả trong 7 ngày</strong>
-                <span className="text-xs text-gray-500">Kể từ ngày mua hàng</span>
-            </div>
-        </div>
-        <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#FF5E4D] flex items-center justify-center text-white flex-shrink-0"><Phone size={16}/></div>
-            <div>
-                <strong className="block text-gray-800">Hỗ trợ 24/7</strong>
-                <span className="text-xs text-gray-500">Hotline: 1900 123 456</span>
-            </div>
-        </div>
+      {/* --- KHỐI ƯU ĐÃI THÊM (Nhỏ gọn) --- */}
+      <div className="mb-6 border border-dashed border-orange-200 bg-orange-50/50 rounded-md p-3">
+        <h4 className="font-bold text-gray-800 flex items-center gap-1.5 mb-2 text-sm">
+            <Gift size={16} className="text-[#FF5E4D]" /> Ưu đãi thêm:
+        </h4>
+        <ul className="space-y-1.5 text-xs text-gray-600">
+            <li className="flex items-start gap-2">
+                <TicketPercent size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                <span>Giảm thêm <strong className="text-[#FF5E4D]">10k</strong> cho đơn hàng từ 300k.</span>
+            </li>
+            <li className="flex items-start gap-2">
+                <TicketPercent size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                <span>Giảm <strong className="text-[#FF5E4D]">5%</strong> tối đa 50k khi thanh toán qua VNPay.</span>
+            </li>
+            <li className="flex items-start gap-2">
+                <TicketPercent size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                <span><strong className="text-[#FF5E4D]">Freeship</strong> cho đơn hàng nội thành Hà Nội.</span>
+            </li>
+        </ul>
       </div>
-
-      <div className="flex items-center gap-3 mt-6 pt-6 border-t border-gray-100">
-         <span className="text-sm text-gray-500">Chia sẻ:</span>
-         <div className="flex gap-2">
-            <button className="w-8 h-8 rounded-full bg-[#3b5998] text-white flex items-center justify-center hover:opacity-90"><Facebook size={14}/></button>
-            <button className="w-8 h-8 rounded-full bg-[#1da1f2] text-white flex items-center justify-center hover:opacity-90"><Twitter size={14}/></button>
-            <button className="w-8 h-8 rounded-full bg-pink-600 text-white flex items-center justify-center hover:opacity-90"><Instagram size={14}/></button>
-         </div>
-      </div> */} 
 
     </div>
   );

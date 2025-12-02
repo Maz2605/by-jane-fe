@@ -1,8 +1,16 @@
+"use client";
 import Link from 'next/link';
 import Image from 'next/image';
 import { Search, Heart, User, ShoppingBag, ChevronDown } from 'lucide-react';
+import { useCartStore } from '@/store/useCartStore';
+import { use } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function Header() {
+
+    const totalItems = useCartStore((state) => state.totalItems());
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => setIsMounted(true), []);
     return (
         <header className="w-full font-sans shadow-sm">
             <div className="container mx-auto px-4 md:px-10">
@@ -42,9 +50,18 @@ export default function Header() {
                             <User size={20} /> <span className="text-[10px] md:text-xs">Tài khoản</span>
                         </div>
                         <div className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] relative">
-                            <ShoppingBag size={20} />
-                            <span className="text-[10px] md:text-xs">Giỏ hàng</span>
-                            <span className="absolute -top-1 -right-1 bg-[#FF5E4D] text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">0</span>
+                            <Link href="/cart" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] relative group">
+                                <div className="relative">
+                                    <ShoppingBag size={20} strokeWidth={1.5} />
+                                    {/* HIỂN THỊ SỐ LƯỢNG THẬT */}
+                                    {isMounted && totalItems > 0 && (
+                                        <span className="absolute -top-1.5 -right-1.5 bg-[#FF5E4D] text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-bounce">
+                                            {totalItems}
+                                        </span>
+                                    )}
+                                </div>
+                                <span className="text-[10px] md:text-xs font-medium">Giỏ hàng</span>
+                            </Link>
                         </div>
                     </div>
                 </div>

@@ -74,7 +74,7 @@ export default function ProductGallery({ images }: { images: string[] }) {
                 resetZoom();
             }}
             className={`
-              relative w-16 h-16 md:w-20 md:h-20 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer transition-all border-2 
+              relative w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-lg overflow-hidden cursor-pointer transition-all border-2 
               ${currentIndex === idx 
                 ? "border-[#FF5E4D] ring-1 ring-[#FF5E4D]" 
                 : "border-transparent hover:border-gray-300 bg-gray-50"
@@ -101,7 +101,7 @@ export default function ProductGallery({ images }: { images: string[] }) {
         >
             {imageList.map((img, idx) => (
                 // Mỗi ảnh chiếm 100% chiều rộng của khung cha
-                <div key={idx} className="w-full h-full flex-shrink-0 flex items-center justify-center relative overflow-hidden">
+                <div key={idx} className="w-full h-full shrink-0 flex items-center justify-center relative overflow-hidden">
                     <img 
                         src={img} 
                         alt={`Product ${idx}`} 
