@@ -59,7 +59,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         
         {/* Breadcrumb (Đường dẫn) */}
         <div className="text-sm text-gray-500 mb-6">
-            Trang chủ <span className="mx-2">/</span> <span className="text-[#FF5E4D]">Cửa hàng</span>
+            Trang chủ <span className="mx-2">/</span> <span className="text-[#FF5E4D]">Sản phẩm</span>
         </div>
 
         {/* Layout chính: Chia 2 cột */}

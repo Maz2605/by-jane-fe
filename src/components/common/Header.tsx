@@ -3,10 +3,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Search, Heart, User, ShoppingBag, ChevronDown } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
-import { use } from 'react';
 import { useEffect, useState } from 'react';
-
+import { useAuthStore } from '@/store/useAuthStore';
 export default function Header() {
+
+    const { user, isLoggedIn, logout } = useAuthStore(); // Lấy thông tin user
 
     const totalItems = useCartStore((state) => state.totalItems());
     const [isMounted, setIsMounted] = useState(false);
@@ -46,9 +47,31 @@ export default function Header() {
                         <div className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D]">
                             <Heart size={20} /> <span className="text-[10px] md:text-xs">Yêu thích</span>
                         </div>
-                        <div className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D]">
-                            <User size={20} /> <span className="text-[10px] md:text-xs">Tài khoản</span>
-                        </div>
+                        {isMounted && isLoggedIn ? (
+               // ĐÃ ĐĂNG NHẬP
+               <div className="flex flex-col items-center gap-1 cursor-pointer group relative hover:text-[#FF5E4D]">
+                <Link href={"/profile"}>
+                  <User size={20} strokeWidth={1.5} />
+                  <span className="text-[10px] md:text-xs font-medium">{user?.username}</span>
+                </Link>
+                  
+                  {/* Menu con: Đăng xuất
+                  <div className="absolute top-full right-0 mt-2 w-32 bg-white shadow-lg rounded border border-gray-100 hidden group-hover:block z-50">
+                     <button 
+                        onClick={logout}
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 text-red-500"
+                     >
+                        Đăng xuất
+                     </button>
+                  </div> */}
+               </div>
+            ) : (
+               // CHƯA ĐĂNG NHẬP
+               <Link href="/login" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D]">
+                  <User size={20} strokeWidth={1.5} />
+                  <span className="text-[10px] md:text-xs font-medium">Tài khoản</span>
+               </Link>
+            )}
                         <div className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] relative">
                             <Link href="/cart" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] relative group">
                                 <div className="relative">
@@ -71,8 +94,7 @@ export default function Header() {
                     <ul className="flex items-center gap-6 md:gap-8 text-sm font-semibold text-gray-700 whitespace-nowrap">
                         <li><Link href="/" className="text-[#FF5E4D]">Trang chủ</Link></li>
                         <li><Link href="/products" className="hover:text-[#FF5E4D]">Sản phẩm</Link></li>
-                        <li className="flex items-center gap-1 cursor-pointer hover:text-[#FF5E4D]">Nam <ChevronDown size={14} /></li>
-                        <li className="flex items-center gap-1 cursor-pointer hover:text-[#FF5E4D]">Nữ <ChevronDown size={14} /></li>
+                        <li><Link href="/products" className="hover:text-[#FF5E4D]">Danh mục sản phẩm</Link></li>
                         <li><Link href="/news" className="hover:text-[#FF5E4D]">Tin tức</Link></li>
                         <li><Link href="/Footer" className="hover:text-[#FF5E4D]">Liên hệ</Link></li>
                     </ul>

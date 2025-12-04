@@ -1,26 +1,29 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation"; 
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
 import EmptyState from "@/components/common/EmptyState";
-import CartItemRow from "@/components/cart/CartItemRow"; // Component Mới
-import CartSummary from "@/components/cart/CartSummary"; // Component Mới
+import CartItemRow from "@/components/cart/CartItemRow";
+import CartSummary from "@/components/cart/CartSummary";
 import { useCartStore } from "@/store/useCartStore";
 
 export default function CartPage() {
-  const { items, removeFromCart } = useCartStore();
+  const router = useRouter();
+  // 👇 Lấy thêm hàm setSelectedCheckoutIds
+  const { items, removeFromCart, setSelectedCheckoutIds } = useCartStore();
+  
   const [isMounted, setIsMounted] = useState(false);
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  // State này lưu danh sách các món đang được tick ở trang này
+  const [selectedItems, setSelectedItems] = useState<string[]>([]); 
 
   useEffect(() => setIsMounted(true), []);
 
-  // Logic chọn tất cả
   const handleSelectAll = () => {
     if (selectedItems.length === items.length) setSelectedItems([]);
     else setSelectedItems(items.map(i => i.uniqueId));
   };
 
-  // Logic chọn lẻ
   const handleSelectItem = (uniqueId: string) => {
     if (selectedItems.includes(uniqueId)) {
       setSelectedItems(prev => prev.filter(id => id !== uniqueId));
@@ -29,7 +32,6 @@ export default function CartPage() {
     }
   };
 
-  // Logic xóa món đã chọn
   const handleDeleteSelected = () => {
     if(confirm("Bạn có chắc muốn xóa các mục đã chọn?")) {
         selectedItems.forEach(id => removeFromCart(id));
@@ -37,7 +39,20 @@ export default function CartPage() {
     }
   };
 
-  // Tính tổng tiền
+  // 👇 LOGIC QUAN TRỌNG NHẤT: Xử lý Mua Hàng
+  const handleCheckout = () => {
+    if (selectedItems.length === 0) {
+      alert("Vui lòng chọn ít nhất 1 sản phẩm để thanh toán!");
+      return;
+    }
+    // 1. Lưu danh sách ID đã chọn vào Store
+    setSelectedCheckoutIds(selectedItems);
+    
+    // 2. Chuyển sang trang thanh toán
+    router.push("/checkout");
+  };
+
+  // Tính tổng tiền chỉ cho các món ĐƯỢC CHỌN
   const totalSelectedPrice = items
     .filter(item => selectedItems.includes(item.uniqueId))
     .reduce((total, item) => total + item.price * item.quantity, 0);
@@ -54,16 +69,12 @@ export default function CartPage() {
         </div>
 
         {items.length === 0 ? (
-           <EmptyState 
-             title="Giỏ hàng của bạn còn trống" 
-             description="Hãy lướt dạo và chọn mua vài món đồ ưng ý nhé!" 
-           />
+           <EmptyState title="Giỏ hàng trống" description="Hãy chọn mua vài món đồ ưng ý nhé!" />
         ) : (
           <div className="flex flex-col gap-4">
-            
-            {/* Header Bảng (Chỉ hiện Desktop) */}
+            {/* Header Bảng */}
             <div className="hidden md:grid grid-cols-12 gap-4 bg-white p-4 rounded-lg shadow-sm text-gray-500 text-sm font-medium items-center">
-                <div className="col-span-6 pl-8">Sản phẩm</div> {/* pl-8 để thẳng hàng với tên sp bên dưới */}
+                <div className="col-span-6 pl-8">Sản phẩm</div>
                 <div className="col-span-2 text-center">Đơn giá</div>
                 <div className="col-span-2 text-center">Số lượng</div>
                 <div className="col-span-1 text-center">Số tiền</div>
@@ -88,12 +99,11 @@ export default function CartPage() {
                 totalPrice={totalSelectedPrice}
                 onSelectAll={handleSelectAll}
                 onDeleteSelected={handleDeleteSelected}
+                onCheckout={handleCheckout} // Gọi hàm handleCheckout khi bấm nút
             />
-
           </div>
         )}
       </div>
-      
       <Footer />
     </main>
   );

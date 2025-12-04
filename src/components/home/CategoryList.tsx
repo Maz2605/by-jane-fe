@@ -24,7 +24,7 @@ export default function CategoryList({ data }: { data: Category[] }) {
           {displayCategories.map((cat) => (
             <div key={cat.id} className="flex flex-col items-center group cursor-pointer">
               
-              <Link href={`/category/${cat.slug}`} className="flex flex-col items-center w-full">
+              <Link href={`/products?category=${cat.slug}`} className="flex flex-col items-center w-full">
                 
                 <div className="w-32 h-32 md:w-40 md:h-40 mb-3 relative transition-transform duration-300 group-hover:-translate-y-2">
                   <img 

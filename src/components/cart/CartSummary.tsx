@@ -7,13 +7,15 @@ interface CartSummaryProps {
   totalPrice: number;
   onSelectAll: () => void;
   onDeleteSelected: () => void;
+  onCheckout: () => void; // 👇 Nhận hàm xử lý từ cha
 }
 
 export default function CartSummary({ 
   selectedItems, 
   totalPrice, 
   onSelectAll, 
-  onDeleteSelected 
+  onDeleteSelected,
+  onCheckout 
 }: CartSummaryProps) {
   
   const { items } = useCartStore();
@@ -22,7 +24,7 @@ export default function CartSummary({
   return (
     <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex flex-col md:flex-row justify-between items-center gap-4 rounded-t-xl md:rounded-none z-40">
         
-        {/* Bên trái: Chọn tất cả & Voucher */}
+        {/* Bên trái */}
         <div className="flex flex-col md:flex-row gap-4 md:items-center w-full md:w-auto">
             <div className="flex items-center gap-2">
                 <input 
@@ -44,13 +46,13 @@ export default function CartSummary({
                 </button>
             </div>
             
-            {/* <div className="flex items-center gap-1 text-[#FF5E4D] cursor-pointer hover:opacity-80">
+            <div className="flex items-center gap-1 text-[#FF5E4D] cursor-pointer hover:opacity-80">
                 <TicketPercent size={18} />
                 <span className="text-sm font-medium">Chọn hoặc nhập mã Voucher</span>
-            </div> */}
+            </div>
         </div>
 
-        {/* Bên phải: Tổng tiền & Nút Mua */}
+        {/* Bên phải */}
         <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
             <div className="text-right">
                 <p className="text-sm text-gray-600">
@@ -60,7 +62,10 @@ export default function CartSummary({
                     {totalPrice.toLocaleString("vi-VN")}đ
                 </p>
             </div>
+            
+            {/* 👇 NÚT MUA HÀNG: Gọi onCheckout khi bấm */}
             <button 
+                onClick={onCheckout}
                 className="bg-[#FF5E4D] text-white px-8 py-3 rounded shadow-md font-bold hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={selectedItems.length === 0}
             >

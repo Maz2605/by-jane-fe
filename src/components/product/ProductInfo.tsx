@@ -134,10 +134,10 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                         <span className="text-red-500 font-bold">Hết hàng</span>
                     )}
                 </p>
-                <p className="flex justify-between">
+                {/* <p className="flex justify-between">
                     <span className="text-gray-500">Mã SKU:</span>
                     <span className="text-gray-900 font-medium">--</span>
-                </p>
+                </p> */}
             </div>
         </div>
       </div>
@@ -253,7 +253,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
         </button>
       </div>
 
-      {/* --- KHỐI ƯU ĐÃI THÊM (Nhỏ gọn) --- */}
+      {/* --- KHỐI ƯU ĐÃI THÊM (Nhỏ gọn) ---
       <div className="mb-6 border border-dashed border-orange-200 bg-orange-50/50 rounded-md p-3">
         <h4 className="font-bold text-gray-800 flex items-center gap-1.5 mb-2 text-sm">
             <Gift size={16} className="text-[#FF5E4D]" /> Ưu đãi thêm:
@@ -272,7 +272,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                 <span><strong className="text-[#FF5E4D]">Freeship</strong> cho đơn hàng nội thành Hà Nội.</span>
             </li>
         </ul>
-      </div>
+      </div> */}
 
     </div>
   );

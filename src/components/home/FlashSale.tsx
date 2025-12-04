@@ -3,6 +3,7 @@ import { ArrowRight, Zap } from "lucide-react";
 import ProductCard from "@/components/product/ProductCard";
 import CountDownTimer from "@/components/ui/CountDownTimer";
 
+// 1. Định nghĩa lại Type cho Data
 interface FlashSaleData {
   id: number;
   name: string;
@@ -10,10 +11,16 @@ interface FlashSaleData {
   products: any[];
 }
 
-export default function FlashSale({ data }: { data: FlashSaleData | null }) {
+// 2. Định nghĩa rõ ràng Props đầu vào
+// Mình thêm categorySlug là string để bạn truyền text trực tiếp
+interface FlashSaleProps {
+  data: FlashSaleData | null;
+  categorySlug: string; 
+}
+
+export default function FlashSale({ data, categorySlug }: FlashSaleProps) {
   if (!data) return null;
 
-  // Lấy đúng 5 sản phẩm để lấp đầy 5 slot
   const displayProducts = data.products.slice(0, 5);
 
   return (
@@ -31,26 +38,28 @@ export default function FlashSale({ data }: { data: FlashSaleData | null }) {
             </div>
             
             <div className="hidden md:block pl-8 border-l border-white/30">
-                <span className="text-white text-sm mr-2 uppercase font-semibold">Kết thúc trong:</span>
-                <div className="inline-block">
-                    <CountDownTimer targetDate={data.endTime} />
-                </div>
+              <span className="text-white text-sm mr-2 uppercase font-semibold">Kết thúc trong:</span>
+              <div className="inline-block">
+                 <CountDownTimer targetDate={data.endTime} />
+              </div>
             </div>
           </div>
 
-          <Link href="/flash-sale" className="group flex items-center gap-1 text-white font-semibold hover:text-yellow-200 transition-colors">
+          {/* 3. SỬ DỤNG PROP categorySlug TẠI ĐÂY */}
+          {/* Kết quả sẽ là: /products?category=slug-ban-truyen-vao */}
+          <Link 
+            href={`/products?category=${categorySlug}`} 
+            className="group flex items-center gap-1 text-white font-semibold hover:text-yellow-200 transition-colors"
+          >
             Xem tất cả <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform"/>
           </Link>
         </div>
 
-        {/* LIST SẢN PHẨM: 5 CỘT (md:grid-cols-5) */}
+        {/* LIST SẢN PHẨM */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {displayProducts.map((product) => (
             <div key={product.id} className="bg-white p-2 rounded-xl shadow-lg transform hover:-translate-y-1 transition-transform duration-300 h-full">
-               
-               {/* Chỉ hiện ProductCard, đã bỏ thanh "Đã bán" */}
                <ProductCard product={product} />
-               
             </div>
           ))}
         </div>

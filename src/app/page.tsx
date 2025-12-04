@@ -20,7 +20,7 @@ export default async function Home() {
     <main className="min-h-screen bg-white">
       <Header />
       <Hero/>
-      <FlashSale data = {flashSaleData}/>
+      <FlashSale data = {flashSaleData} categorySlug="set-hoc-duong"/>
       <CategoryList data={categories}/>
       <ProductList data={randomProducts} title="Gợi ý hôm nay" />
       <Footer/>
