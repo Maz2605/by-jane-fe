@@ -1,4 +1,17 @@
-import { fetchAPI } from "./base";
+import { fetchAPI } from "./base"; // Hoặc đường dẫn import fetch của bạn
+
+// Định nghĩa Interface để code gợi ý chuẩn xác
+interface CartItem {
+  id: number;           // ID số (VD: 7)
+  documentId?: string;  // ID chuỗi của v5 (VD: "j8x...", nếu có thì tốt)
+  name: string;
+  price: number;
+  quantity: number;     // Số lượng khách chọn mua
+  variant: {
+    size: string;
+    color: string;
+  };
+}
 
 interface OrderData {
   customerName: string;
@@ -6,44 +19,60 @@ interface OrderData {
   customerEmail: string;
   shippingAddress: string;
   note: string;
-  items: any[]; // Danh sách hàng từ giỏ
   totalAmount: number;
+  items: CartItem[];
 }
 
 export async function createOrder(orderData: OrderData) {
-  
-  // 1. Chuyển đổi cấu trúc Giỏ hàng (Frontend) -> Cấu trúc Strapi (Backend)
-  // Strapi cần mảng 'items' là Component 'shop.OrderItem'
-  const strapiItems = orderData.items.map((item) => ({
-    product: item.id,        // Link tới ID sản phẩm
-    productName: item.name,  // Lưu chết tên lúc mua
-    price: item.price,       // Lưu chết giá lúc mua
-    quantity: item.quantity,
-    size: item.variant.size, // Tách riêng size
-    color: item.variant.color // Tách riêng màu
+  console.log("🚀 [FE] Đang chuẩn bị gửi đơn hàng...", orderData);
+
+  // 1. Map dữ liệu từ Giỏ hàng sang format API Custom
+  const simplifiedItems = orderData.items.map((item) => ({
+    // Gửi ID định danh sản phẩm (Ưu tiên documentId nếu có)
+    productId: item.id,       
+    documentId: item.documentId, 
+
+    // 🔥 QUAN TRỌNG: Map số lượng mua (quantity) vào field tên là 'stock'
+    // Lý do: Backend của bạn đang định nghĩa field số lượng mua là 'stock'
+    stock: item.quantity,      
+    
+    // Các thông tin biến thể
+    size: item.variant.size,
+    color: item.variant.color,
+    
+    // Snapshot thông tin lúc mua (để lưu vào lịch sử đơn)
+    name: item.name,          
+    price: item.price         
   }));
 
-  // 2. Chuẩn bị Payload gửi đi
+  // 2. Chuẩn bị Payload sạch sẽ
   const payload = {
-  data: {
-    customerName: orderData.customerName,
-    customerPhone: orderData.customerPhone,
-    customerEmail: orderData.customerEmail,
-    shippingAddress: orderData.shippingAddress,
-    note: orderData.note, // Giờ nó nằm trong 'data' nên sẽ được chấp nhận
-    totalAmount: orderData.totalAmount,
-    orderStatus: "pending", 
-    paymentMethod: "cod",
-    items: strapiItems,
-    publishedAt: new Date(), // Nếu bạn muốn publish luôn
-  },
-};
-  // 3. Gọi API POST
-  return await fetchAPI("/orders", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+    data: {
+      customerName: orderData.customerName,
+      customerPhone: orderData.customerPhone,
+      customerEmail: orderData.customerEmail,
+      shippingAddress: orderData.shippingAddress,
+      note: orderData.note,
+      totalAmount: orderData.totalAmount,
+      
+      // Mảng items đã map ở trên
+      items: simplifiedItems, 
     },
-    body: JSON.stringify(payload),
-  });
+  };
+
+  // 3. Gọi API Custom Controller (Không gọi API mặc định của Strapi)
+  try {
+    const response = await fetchAPI("/orders/place-order", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    return response;
+  } catch (error) {
+    console.error("❌ [FE] Lỗi khi gọi API đặt hàng:", error);
+    throw error;
+  }
 }
