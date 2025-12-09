@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Heart, Gift, TicketPercent } from "lucide-react";
-import { useCartStore } from "@/store/useCartStore"; // Import Store
+import { useRouter } from "next/navigation"; // Import Router để chuyển trang
+import { useCartStore } from "@/store/useCartStore";
 
 interface Variant {
   id: number;
@@ -18,23 +19,26 @@ interface ProductInfoProps {
     price: number;
     originalPrice?: number;
     discount?: number;
-    image: string; // Ảnh đại diện để lưu vào giỏ
+    image: string;
     variants: Variant[];
   };
 }
 
 export default function ProductInfo({ product }: ProductInfoProps) {
-  const [quantity, setQuantity] = useState(1);
+  const router = useRouter(); // Hook điều hướng
   
-  // State lựa chọn
+  // State quản lý UI
+  const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [currentStock, setCurrentStock] = useState(0);
 
-  // Lấy hàm thêm vào giỏ từ Store
-  const addToCart = useCartStore((state) => state.addToCart);
+  // Store action
+  const { addToCart, setSelectedCheckoutIds } = useCartStore();
 
-  // 1. Xử lý danh sách màu duy nhất
+  // --- LOGIC XỬ LÝ DỮ LIỆU SẢN PHẨM ---
+
+  // 1. Lọc danh sách màu duy nhất
   const uniqueColors = Array.from(new Map(product.variants.map(v => [v.color, v])).values());
 
   // 2. Hàm tìm Size đầu tiên có hàng của một màu
@@ -44,7 +48,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
     return available ? available.size : (variantsOfColor[0]?.size || null);
   };
 
-  // 3. Auto chọn màu/size khi mới vào
+  // 3. Auto chọn màu/size khi mới vào trang
   useEffect(() => {
     if (uniqueColors.length > 0) {
       const firstColor = uniqueColors[0].color;
@@ -65,23 +69,26 @@ export default function ProductInfo({ product }: ProductInfoProps) {
     );
     if (variant) {
       setCurrentStock(variant.stock);
+      // Reset số lượng nếu số lượng đang chọn lớn hơn tồn kho mới
       if (quantity > variant.stock) setQuantity(1);
     } else {
       setCurrentStock(0);
     }
   }, [selectedColor, selectedSize]);
 
-  // 6. Hàm xử lý thêm vào giỏ hàng
-  const handleAddToCart = () => {
+  // --- LOGIC GIỎ HÀNG & MUA NGAY ---
+
+  // Helper: Tạo object Item chuẩn hóa
+  const createCartItem = () => {
     if (!selectedColor || !selectedSize) {
       alert("Vui lòng chọn màu sắc và kích cỡ");
-      return;
+      return null;
     }
 
-    // Tạo ID duy nhất cho sản phẩm trong giỏ (VD: 1-Den-M)
+    // Tạo ID duy nhất: IDSP-Mau-Size
     const uniqueId = `${product.id}-${selectedColor}-${selectedSize}`;
 
-    addToCart({
+    return {
       id: product.id,
       uniqueId: uniqueId,
       name: product.name,
@@ -93,10 +100,32 @@ export default function ProductInfo({ product }: ProductInfoProps) {
         color: selectedColor,
         size: selectedSize
       }
-    });
+    };
+  };
 
-    // Có thể thay bằng Toast thông báo đẹp hơn
-    alert("Đã thêm vào giỏ hàng!");
+  // Handle 1: Thêm vào giỏ (Ở lại trang hiện tại)
+  const handleAddToCart = () => {
+    const item = createCartItem();
+    if (item) {
+      addToCart(item);
+      alert("Đã thêm vào giỏ hàng!");
+    }
+  };
+
+  // Handle 2: Mua ngay (Chuyển hướng sang Checkout)
+  const handleBuyNow = () => {
+    const item = createCartItem();
+    if (item) {
+      // B1: Thêm vào Store
+      addToCart(item);
+      
+      // B2: Set trạng thái "Chỉ thanh toán món này"
+      // Store sẽ ghi nhận chỉ ID này được phép hiện ở trang Checkout
+      setSelectedCheckoutIds([item.uniqueId]);
+
+      // B3: Chuyển hướng
+      router.push("/checkout");
+    }
   };
 
   return (
@@ -134,15 +163,11 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                         <span className="text-red-500 font-bold">Hết hàng</span>
                     )}
                 </p>
-                {/* <p className="flex justify-between">
-                    <span className="text-gray-500">Mã SKU:</span>
-                    <span className="text-gray-900 font-medium">--</span>
-                </p> */}
             </div>
         </div>
       </div>
 
-      {/* --- CHỌN MÀU SẮC (Giao diện ô chữ nhật) --- */}
+      {/* --- CHỌN MÀU SẮC --- */}
       <div className="mb-6">
         <span className="block text-sm font-bold text-gray-700 mb-3">
             Màu sắc: <span className="font-normal text-gray-500">{selectedColor}</span>
@@ -153,12 +178,12 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                     key={v.id}
                     onClick={() => {
                         setSelectedColor(v.color);
-                        setSelectedSize(findFirstAvailableSize(v.color)); // Auto chọn size
+                        setSelectedSize(findFirstAvailableSize(v.color));
                     }}
                     className={`min-w-20 h-10 px-3 rounded border text-sm font-medium transition-all flex items-center justify-center gap-2 ${
                         selectedColor === v.color
-                        ? "bg-black text-white border-black shadow-md" // Active
-                        : "bg-white text-gray-700 border-gray-200 hover:border-black" // Inactive
+                        ? "bg-black text-white border-black shadow-md"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-black"
                     }`}
                     title={v.color}
                 >
@@ -231,7 +256,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
         </span>
       </div>
 
-      {/* --- CÁC NÚT MUA --- */}
+      {/* --- CÁC NÚT ACTIONS --- */}
       <div className="space-y-3 mb-8">
         <div className="flex gap-3">
             <button 
@@ -245,7 +270,10 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                 <Heart size={22} />
             </button>
         </div>
+        
+        {/* Nút MUA NGAY với logic mới */}
         <button 
+            onClick={handleBuyNow}
             disabled={!selectedSize || currentStock === 0}
             className="w-full bg-[#FF5E4D] text-white py-3.5 rounded font-bold hover:bg-orange-600 transition-colors uppercase tracking-wide shadow-lg shadow-orange-100 disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -253,8 +281,8 @@ export default function ProductInfo({ product }: ProductInfoProps) {
         </button>
       </div>
 
-      {/* --- KHỐI ƯU ĐÃI THÊM (Nhỏ gọn) ---
-      <div className="mb-6 border border-dashed border-orange-200 bg-orange-50/50 rounded-md p-3">
+      {/* --- KHỐI ƯU ĐÃI THÊM (Có thể uncomment nếu cần) --- */}
+      {/* <div className="mb-6 border border-dashed border-orange-200 bg-orange-50/50 rounded-md p-3">
         <h4 className="font-bold text-gray-800 flex items-center gap-1.5 mb-2 text-sm">
             <Gift size={16} className="text-[#FF5E4D]" /> Ưu đãi thêm:
         </h4>
@@ -263,16 +291,9 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                 <TicketPercent size={14} className="text-gray-400 mt-0.5 shrink-0" />
                 <span>Giảm thêm <strong className="text-[#FF5E4D]">10k</strong> cho đơn hàng từ 300k.</span>
             </li>
-            <li className="flex items-start gap-2">
-                <TicketPercent size={14} className="text-gray-400 mt-0.5 shrink-0" />
-                <span>Giảm <strong className="text-[#FF5E4D]">5%</strong> tối đa 50k khi thanh toán qua VNPay.</span>
-            </li>
-            <li className="flex items-start gap-2">
-                <TicketPercent size={14} className="text-gray-400 mt-0.5 shrink-0" />
-                <span><strong className="text-[#FF5E4D]">Freeship</strong> cho đơn hàng nội thành Hà Nội.</span>
-            </li>
         </ul>
-      </div> */}
+      </div> 
+      */}
 
     </div>
   );
