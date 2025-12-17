@@ -173,7 +173,7 @@ export default function Hero({ slides = MOCK_SLIDES }: HeroProps) {
             autoplay={{ delay: 5000, disableOnInteraction: false }}
             pagination={{ clickable: true, dynamicBullets: true }} // Thêm dynamicBullets cho đẹp
             navigation={true}
-            className="w-full aspect-[4/3] md:aspect-[16/8]"
+            className="w-full aspect-4/3 md:aspect-16/8"
           >
             {slides.map((slide) => (
               <SwiperSlide key={slide.id} className="relative w-full h-full">

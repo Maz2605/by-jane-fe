@@ -1,20 +1,15 @@
 "use client";
+
 import { useState } from "react";
 import ProductCard from "./ProductCard";
 import SectionTitle from "@/components/common/SectionTitle";
 
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  discount?: number;
-  originalPrice?: number;
-  colors?: string[];
-}
+// QUAN TRỌNG: Import Type từ file service/api gốc
+// Đừng tự định nghĩa interface Product ở đây nữa
+import { Product } from "@/services/product"; 
 
 interface ProductListProps {
-  data: Product[];
+  data: Product[]; // Sử dụng Type chuẩn đồng bộ với API
   title?: string;
 }
 

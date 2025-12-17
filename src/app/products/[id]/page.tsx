@@ -4,23 +4,20 @@ import Footer from "@/components/common/Footer";
 import ProductGallery from "@/components/product/ProductGallery";
 import ProductInfo from "@/components/product/ProductInfo";
 import ProductTabs from "@/components/product/ProductTabs";
-import RelatedProducts from "@/components/product/RelatedProduct"; // (Check lại tên file có 's' không nhé)
+import RelatedProducts from "@/components/product/RelatedProduct";
 
-// Import hàm mới
 import { getProductById, getRelatedProducts } from "@/services/product";
 
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
+  // Next.js 15: params cần await
   const { id } = await params;
 
   const product = await getProductById(id);
 
   if (!product) return notFound();
 
-  // --- LOGIC MỚI: Lấy sản phẩm liên quan chuẩn hơn ---
-  // Lấy category của sản phẩm hiện tại (Giả sử trong product đã có thông tin này)
-  // Nếu chưa có thì lấy random như cũ cũng được
-  const categorySlug = product.categorySlug || null; 
-  
+  // Logic lấy sản phẩm liên quan
+  const categorySlug = product.categorySlug || undefined;
   const relatedProducts = await getRelatedProducts(product.id, categorySlug);
 
   return (
@@ -36,12 +33,18 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
             <span className="text-[#FF5E4D] font-medium">{product.name}</span>
         </div>
 
-        {/* ... (Phần Gallery và Info giữ nguyên) ... */}
         <div className="flex flex-col lg:flex-row gap-10 mb-16">
+            {/* CỘT TRÁI: GALLERY */}
             <div className="w-full lg:w-3/5">
-                <ProductGallery images={product.images} />
+                {/* --- SỬA Ở ĐÂY --- */}
+                {/* Đổi prop 'images' thành 'items' */}
+                {/* Đổi data 'product.images' thành 'product.gallery' */}
+                <ProductGallery items={product.gallery} />
             </div>
+
+            {/* CỘT PHẢI: INFO */}
             <div className="w-full lg:w-2/5">
+                {/* Đảm bảo bên trong ProductInfo bạn cũng cập nhật type Product mới nhé */}
                 <ProductInfo product={product} />
             </div>
         </div>
@@ -52,7 +55,6 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         </div>
 
         {/* --- PHẦN SẢN PHẨM LIÊN QUAN --- */}
-        {/* Chỉ hiện khi có dữ liệu */}
         {relatedProducts.length > 0 && (
             <div className="border-t border-gray-100 pt-10">
                 <RelatedProducts products={relatedProducts} />

@@ -1,31 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Heart, Gift, TicketPercent } from "lucide-react";
-import { useRouter } from "next/navigation"; // Import Router để chuyển trang
+import { Heart } from "lucide-react"; // Bỏ Gift, TicketPercent nếu chưa dùng để code sạch
+import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/useCartStore";
 
-interface Variant {
-  id: number;
-  size: string;
-  color: string;
-  colorCode: string;
-  stock: number;
-}
+// 1. IMPORT TYPE TỪ NGUỒN CHÍNH (QUAN TRỌNG)
+import { Product } from "@/services/product";
 
-interface ProductInfoProps {
-  product: {
-    id: number;
-    name: string;
-    price: number;
-    originalPrice?: number;
-    discount?: number;
-    image: string;
-    variants: Variant[];
-  };
-}
-
-export default function ProductInfo({ product }: ProductInfoProps) {
-  const router = useRouter(); // Hook điều hướng
+// 2. Sử dụng trực tiếp Type Product, không cần định nghĩa lại Props
+export default function ProductInfo({ product }: { product: Product }) {
+  const router = useRouter();
   
   // State quản lý UI
   const [quantity, setQuantity] = useState(1);
@@ -38,7 +22,8 @@ export default function ProductInfo({ product }: ProductInfoProps) {
 
   // --- LOGIC XỬ LÝ DỮ LIỆU SẢN PHẨM ---
 
-  // 1. Lọc danh sách màu duy nhất
+  // 1. Lọc danh sách màu duy nhất (Dùng Map để lọc trùng theo colorCode hoặc tên màu)
+  // Lưu ý: product.variants lấy từ API chuẩn đã có đủ fields
   const uniqueColors = Array.from(new Map(product.variants.map(v => [v.color, v])).values());
 
   // 2. Hàm tìm Size đầu tiên có hàng của một màu
@@ -55,7 +40,8 @@ export default function ProductInfo({ product }: ProductInfoProps) {
       setSelectedColor(firstColor);
       setSelectedSize(findFirstAvailableSize(firstColor));
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Chỉ chạy 1 lần khi mount
 
   // 4. Lọc danh sách size theo màu đang chọn
   const availableSizes = product.variants
@@ -74,7 +60,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
     } else {
       setCurrentStock(0);
     }
-  }, [selectedColor, selectedSize]);
+  }, [selectedColor, selectedSize, product.variants, quantity]);
 
   // --- LOGIC GIỎ HÀNG & MUA NGAY ---
 
@@ -93,7 +79,8 @@ export default function ProductInfo({ product }: ProductInfoProps) {
       uniqueId: uniqueId,
       name: product.name,
       price: product.price,
-      image: product.image,
+      // API mới trả về product.image là string (thumbnail), dùng luôn
+      image: product.image, 
       quantity: quantity,
       maxStock: currentStock,
       variant: {
@@ -103,33 +90,32 @@ export default function ProductInfo({ product }: ProductInfoProps) {
     };
   };
 
-  // Handle 1: Thêm vào giỏ (Ở lại trang hiện tại)
+  // Handle 1: Thêm vào giỏ
   const handleAddToCart = () => {
     const item = createCartItem();
     if (item) {
       addToCart(item);
-      alert("Đã thêm vào giỏ hàng!");
+      // Có thể thay alert bằng Toast notification cho đẹp hơn (vd: sonner / react-hot-toast)
+      alert("Đã thêm vào giỏ hàng!"); 
     }
   };
 
-  // Handle 2: Mua ngay (Chuyển hướng sang Checkout)
+  // Handle 2: Mua ngay
   const handleBuyNow = () => {
     const item = createCartItem();
     if (item) {
-      // B1: Thêm vào Store
       addToCart(item);
-      
-      // B2: Set trạng thái "Chỉ thanh toán món này"
-      // Store sẽ ghi nhận chỉ ID này được phép hiện ở trang Checkout
       setSelectedCheckoutIds([item.uniqueId]);
-
-      // B3: Chuyển hướng
       router.push("/checkout");
     }
   };
 
+  // Helper: Format tiền tệ cho đồng bộ với ProductCard
+  const formatPrice = (price: number) => 
+    new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full font-sans">
       
       {/* --- HEADER: TÊN & GIÁ --- */}
       <div className="border-b border-gray-100 pb-6 mb-6">
@@ -140,14 +126,14 @@ export default function ProductInfo({ product }: ProductInfoProps) {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-end gap-3">
                 <span className="text-3xl font-bold text-[#FF5E4D]">
-                    {product.price.toLocaleString("vi-VN")}đ
+                    {formatPrice(product.price)}
                 </span>
                 {product.originalPrice && (
                     <span className="text-lg text-gray-400 line-through mb-1 font-medium">
-                        {product.originalPrice.toLocaleString("vi-VN")}đ
+                        {formatPrice(product.originalPrice)}
                     </span>
                 )}
-                {product.discount && product.discount > 0 && (
+                {product.discount > 0 && (
                     <span className="bg-red-100 text-[#FF5E4D] px-2 py-0.5 rounded text-sm font-bold mb-1">
                         -{product.discount}%
                     </span>
@@ -187,6 +173,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                     }`}
                     title={v.color}
                 >
+                    {/* Dùng colorCode từ API chuẩn */}
                     <span className="w-3 h-3 rounded-full border border-gray-300 shrink-0" style={{ backgroundColor: v.colorCode }}></span>
                     {v.color}
                 </button>
@@ -201,6 +188,10 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                 Kích cỡ: <span className="font-normal text-gray-500">{selectedSize}</span>
             </span>
             <button className="text-xs text-[#FF5E4D] hover:underline flex items-center gap-1">
+                
+
+[Image of size chart guide]
+
                 📏 Bảng kích thước
             </button>
         </div>
@@ -215,7 +206,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                             selectedSize === s.size
                             ? "bg-black text-white border-black" 
                             : s.stock === 0 
-                                ? "bg-gray-50 text-gray-300 cursor-not-allowed border-gray-100 box-decoration-slice line-through" 
+                                ? "bg-gray-50 text-gray-300 cursor-not-allowed border-gray-100 line-through" 
                                 : "bg-white text-gray-700 border-gray-200 hover:border-black"
                         }`}
                     >
@@ -271,7 +262,6 @@ export default function ProductInfo({ product }: ProductInfoProps) {
             </button>
         </div>
         
-        {/* Nút MUA NGAY với logic mới */}
         <button 
             onClick={handleBuyNow}
             disabled={!selectedSize || currentStock === 0}
@@ -280,20 +270,6 @@ export default function ProductInfo({ product }: ProductInfoProps) {
             {currentStock === 0 ? "Hết hàng" : "Mua ngay"}
         </button>
       </div>
-
-      {/* --- KHỐI ƯU ĐÃI THÊM (Có thể uncomment nếu cần) --- */}
-      {/* <div className="mb-6 border border-dashed border-orange-200 bg-orange-50/50 rounded-md p-3">
-        <h4 className="font-bold text-gray-800 flex items-center gap-1.5 mb-2 text-sm">
-            <Gift size={16} className="text-[#FF5E4D]" /> Ưu đãi thêm:
-        </h4>
-        <ul className="space-y-1.5 text-xs text-gray-600">
-            <li className="flex items-start gap-2">
-                <TicketPercent size={14} className="text-gray-400 mt-0.5 shrink-0" />
-                <span>Giảm thêm <strong className="text-[#FF5E4D]">10k</strong> cho đơn hàng từ 300k.</span>
-            </li>
-        </ul>
-      </div> 
-      */}
 
     </div>
   );
