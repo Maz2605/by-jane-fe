@@ -160,7 +160,7 @@ export default function CheckoutPage() {
     <main className="min-h-screen bg-gray-50 flex flex-col relative">
       <Header />
       
-      <div className="container mx-auto px-4 md:px-10 py-8 flex-grow">
+      <div className="container mx-auto px-4 md:px-10 py-8 grow">
         <h1 className="text-2xl font-bold text-gray-800 mb-6 uppercase text-center">Thanh toán</h1>
 
         <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-8 items-start">
