@@ -14,7 +14,7 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="bg-white rounded-lg overflow-hidden transition-all duration-300 hover:shadow-xl border border-transparent hover:border-gray-100">
         
         {/* 1. KHUNG ẢNH */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
+        <div className="relative aspect-3/4 overflow-hidden bg-gray-100">
           {/* Logic ở đây đã đúng với API mới:
              product.image bây giờ là string (URL ảnh thumbnail) 
              chứ không phải mảng, nên dùng trực tiếp được.
@@ -61,7 +61,7 @@ export default function ProductCard({ product }: { product: Product }) {
           )}
 
           {/* Tên sản phẩm */}
-          <h3 className="text-gray-700 text-sm font-medium line-clamp-2 min-h-[40px] group-hover:text-[#FF5E4D] transition-colors mb-1">
+          <h3 className="text-gray-700 text-sm font-medium line-clamp-2 min-h-10 group-hover:text-[#FF5E4D] transition-colors mb-1">
             {product.name}
           </h3>
 
