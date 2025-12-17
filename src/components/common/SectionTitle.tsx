@@ -20,7 +20,7 @@ export default function SectionTitle({ title }: SectionTitleProps) {
       {/* Cụm bên phải: Hình thoi + Dòng kẻ */}
       <div className="flex items-center flex-1 justify-start gap-1">
         <div className="w-1.5 h-1.5 bg-[#FF5E4D] rotate-45"></div>
-        <div className="h-[1px] w-12 md:w-32 bg-[#FF5E4D]"></div>
+        <div className="h-px w-12 md:w-32 bg-[#FF5E4D]"></div>
       </div>
 
     </div>

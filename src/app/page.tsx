@@ -3,6 +3,7 @@ import Hero from "@/components/home/Hero";
 import CategoryList from "@/components/home/CategoryList";
 import ProductList from "@/components/product/ProductList";
 import FlashSale from "@/components/home/FlashSale";
+import HomeNewsSection from "@/components/news/HomeNewsSection"
 import Footer from "@/components/common/Footer";
 
 import { getCategories } from "@/services/category";
@@ -26,6 +27,7 @@ export default async function Home() {
       <FlashSale data={flashSaleData} categorySlug="set-hoc-duong" />
       <CategoryList data={categories} />
       <ProductList data={randomProducts} title="Gợi ý hôm nay" />
+      <HomeNewsSection/>
       <Footer />
     </main>
   );

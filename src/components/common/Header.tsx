@@ -95,8 +95,8 @@ export default function Header() {
                         <li><Link href="/" className="text-[#FF5E4D]">Trang chủ</Link></li>
                         <li><Link href="/products" className="hover:text-[#FF5E4D]">Sản phẩm</Link></li>
                         <li><Link href="/products" className="hover:text-[#FF5E4D]">Danh mục sản phẩm</Link></li>
-                        <li><Link href="/news" className="hover:text-[#FF5E4D]">Tin tức</Link></li>
-                        <li><Link href="/Footer" className="hover:text-[#FF5E4D]">Liên hệ</Link></li>
+                        <li><Link href="/blog" className="hover:text-[#FF5E4D]">Tin tức</Link></li>
+                        {/* <li><Link href="/footer" className="hover:text-[#FF5E4D]">Liên hệ</Link></li> */}
                     </ul>
                 </nav>
 
