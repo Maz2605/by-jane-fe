@@ -133,7 +133,7 @@ export default function Header() {
                         {isMounted && isLoggedIn ? (
                             <Link href="/profile" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] transition-colors group">
                                 <User size={20} strokeWidth={1.5} className="group-hover:scale-110 transition-transform"/>
-                                <span className="text-[10px] md:text-xs font-medium truncate max-w-[80px]">{user?.username}</span>
+                                <span className="text-[10px] md:text-xs font-medium truncate max-w-20">{user?.username}</span>
                             </Link>
                         ) : (
                             <Link href="/login" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] transition-colors group">

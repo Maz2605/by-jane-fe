@@ -47,7 +47,7 @@ export default function BlogPage() {
       <Header />
 
       {/* FIX 2: Thẻ main thêm flex-grow để đẩy footer xuống */}
-      <main className="flex-grow">
+      <main className="grow">
         
         {/* Header Text */}
         <div className="container mx-auto px-4 pt-12 pb-8">
@@ -72,7 +72,7 @@ export default function BlogPage() {
                             priority
                             unoptimized
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-8">
+                        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-8">
                             <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 w-fit mb-3 rounded">{featuredArticles[0].category}</span>
                             <h2 className="text-white text-2xl lg:text-4xl font-bold leading-tight mb-2 group-hover:text-red-200 transition-colors">
                                 {featuredArticles[0].title}
@@ -85,7 +85,7 @@ export default function BlogPage() {
 
                     <div className="flex flex-col gap-4 h-full">
                         {featuredArticles.slice(1, 3).map((item) => (
-                            <Link href={`/blog/${item.slug}`} key={item.id} className="group relative flex-1 h-[240px] lg:h-auto rounded-2xl overflow-hidden">
+                            <Link href={`/blog/${item.slug}`} key={item.id} className="group relative flex-1 h-60 lg:h-auto rounded-2xl overflow-hidden">
                                 <Image 
                                     src={item.coverImage} 
                                     alt={item.title} 
@@ -93,7 +93,7 @@ export default function BlogPage() {
                                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                                     unoptimized
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-6">
+                                <div className="absolute inset-0 bg-linear-to-t from-black/90 via-transparent to-transparent flex flex-col justify-end p-6">
                                     <span className="text-red-400 text-xs font-bold mb-1">{item.category}</span>
                                     <h3 className="text-white text-lg font-bold leading-snug line-clamp-2 group-hover:underline">
                                         {item.title}
@@ -111,7 +111,7 @@ export default function BlogPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {listArticles.map((item) => (
                     <Link href={`/blog/${item.slug}`} key={item.id} className="group flex flex-col gap-3">
-                        <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-100">
+                        <div className="relative w-full aspect-4/3 rounded-xl overflow-hidden bg-gray-100">
                             <Image 
                                 src={item.coverImage} 
                                 alt={item.title} 

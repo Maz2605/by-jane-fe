@@ -24,7 +24,7 @@ export default function FlashSale({ data, categorySlug }: FlashSaleProps) {
   const displayProducts = data.products.slice(0, 5);
 
   return (
-    <section className="py-10 bg-gradient-to-r from-[#FF5E4D] to-[#FF8A65]">
+    <section className="py-10 bg-linear-to-r from-[#FF5E4D] to-[#FF8A65]">
       <div className="container mx-auto px-4 md:px-10">
         
         {/* HEADER */}

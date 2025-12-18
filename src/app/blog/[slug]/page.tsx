@@ -49,7 +49,7 @@ export default function ArticleDetailPage({ params }: { params: { slug: string }
     <div className="flex flex-col min-h-screen bg-white">
       <Header />
 
-      <main className="flex-grow">
+      <main className="grow">
         
         {/* --- 1. HEADER & COVER --- */}
         <div className="container mx-auto px-4 pt-12 max-w-4xl text-center">
@@ -79,7 +79,7 @@ export default function ArticleDetailPage({ params }: { params: { slug: string }
 
         {/* ẢNH BÌA */}
         <div className="container mx-auto px-4 max-w-5xl mb-16">
-            <div className="relative w-full aspect-[21/9] md:aspect-[2/1] rounded-2xl overflow-hidden shadow-sm">
+            <div className="relative w-full aspect-21/9 md:aspect-2/1 rounded-2xl overflow-hidden shadow-sm">
                 <Image 
                     src={ARTICLE_DETAIL.coverImage} 
                     alt={ARTICLE_DETAIL.title} 
@@ -124,7 +124,7 @@ export default function ArticleDetailPage({ params }: { params: { slug: string }
 
                 {/* Author Bio Box */}
                 <div className="flex items-center gap-6 bg-gray-50 p-8 rounded-2xl">
-                    <div className="relative w-16 h-16 md:w-20 md:h-20 flex-shrink-0 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                    <div className="relative w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-full overflow-hidden border-2 border-white shadow-sm">
                         <Image 
                             src={ARTICLE_DETAIL.authorAvatar} 
                             alt={ARTICLE_DETAIL.author} 
@@ -168,7 +168,7 @@ export default function ArticleDetailPage({ params }: { params: { slug: string }
                     </div>
 
                     {/* Video Info */}
-                    <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/90 to-transparent text-left">
+                    <div className="absolute bottom-0 left-0 right-0 p-8 bg-linear-to-t from-black/90 to-transparent text-left">
                         <h4 className="text-xl font-bold mb-1">{ARTICLE_DETAIL.featuredVideo.title}</h4>
                         <p className="text-gray-400 text-sm flex items-center gap-2">
                             <Clock size={14}/> {ARTICLE_DETAIL.featuredVideo.duration}
