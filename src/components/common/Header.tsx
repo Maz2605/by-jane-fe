@@ -1,105 +1,194 @@
 "use client";
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { Search, Heart, User, ShoppingBag, ChevronDown } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react'; // Thêm Suspense
 import { useAuthStore } from '@/store/useAuthStore';
+import { getCategories } from '@/services/category';
+
+// 1. Thêm hooks điều hướng của Next.js
+import { useRouter, useSearchParams } from 'next/navigation';
+
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  img: string;
+}
+
+// Tách SearchBar ra component con hoặc bọc cả Header trong Suspense 
+// vì useSearchParams yêu cầu Suspense boundary trong Next.js App Router
+function SearchBar() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    
+    // State lưu từ khóa tìm kiếm
+    const [searchQuery, setSearchQuery] = useState("");
+
+    // Đồng bộ input với URL khi trang load (UX: để người dùng biết mình đang tìm gì)
+    useEffect(() => {
+        const currentSearch = searchParams.get('search'); // hoặc 'q' tùy backend
+        if (currentSearch) {
+            setSearchQuery(currentSearch);
+        }
+    }, [searchParams]);
+
+    // Hàm xử lý tìm kiếm chính
+    const handleSearch = () => {
+        // 1. Trim khoảng trắng thừa
+        const trimmedQuery = searchQuery.trim();
+        
+        // 2. Nếu ô tìm kiếm rỗng, không làm gì (hoặc có thể redirect về trang products gốc)
+        if (!trimmedQuery) return;
+
+        // 3. Điều hướng sang trang products với tham số search
+        // encodeURIComponent để xử lý các ký tự đặc biệt (dấu cách, &, ?, ...)
+        router.push(`/products?search=${encodeURIComponent(trimmedQuery)}`);
+    };
+
+    // Xử lý khi nhấn Enter
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    };
+
+    return (
+        <div className="flex-1 max-w-xl relative hidden md:block">
+            <input
+                type="text"
+                placeholder="Tìm kiếm sản phẩm..."
+                className="w-full bg-gray-100 rounded-full py-3 pl-6 pr-12 text-sm outline-none focus:ring-2 focus:ring-[#FF5E4D]/50 transition border border-transparent focus:bg-white focus:border-[#FF5E4D]"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+            />
+            <button 
+                onClick={handleSearch}
+                className="absolute right-1 top-1/2 -translate-y-1/2 bg-[#FF5E4D] text-white p-2 rounded-full hover:bg-orange-600 transition-colors shadow-md"
+            >
+                <Search size={18} />
+            </button>
+        </div>
+    );
+}
+
 export default function Header() {
-
-    const { user, isLoggedIn, logout } = useAuthStore(); // Lấy thông tin user
-
+    const { user, isLoggedIn } = useAuthStore();
     const totalItems = useCartStore((state) => state.totalItems());
     const [isMounted, setIsMounted] = useState(false);
-    useEffect(() => setIsMounted(true), []);
-    return (
-        <header className="w-full font-sans shadow-sm">
-            <div className="container mx-auto px-4 md:px-10">
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-                {/* MAIN HEADER */}
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
+        const fetchMenuData = async () => {
+            try {
+                setIsLoading(true);
+                const data = await getCategories();
+                setCategories(data);
+            } catch (error) {
+                console.error("Header: Failed to load categories", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchMenuData();
+    }, []);
+
+    return (
+        <header className="w-full font-sans shadow-sm bg-white sticky top-0 z-50">
+            <div className="container mx-auto px-4 md:px-10">
                 <div className="flex items-center justify-between py-6 gap-4 md:gap-8">
+                    
                     {/* Logo */}
                     <Link href="/" className="shrink-0">
                         <Image
                             src="/images/logo/logo.png"
                             alt="Logo Shop"
-                            width={300}
-                            height={100}
-                            className="h-26 w-auto object-contain" // Class này sẽ ghi đè kích thước ở trên
-                            priority // Báo cho Next.js biết đây là ảnh quan trọng, cần load ngay lập tức
+                            width={160}
+                            height={50}
+                            className="h-12 md:h-16 w-auto object-contain"
+                            priority
                         />
                     </Link>
 
-                    {/* Search Bar */}
-                    <div className="flex-1 max-w-xl relative hidden md:block">
-                        <input
-                            type="text"
-                            placeholder="Tìm kiếm..."
-                            className="w-full bg-gray-100 rounded-full py-3 pl-6 pr-12 text-sm outline-none focus:ring-2 focus:ring-orange-300 transition"
-                        />
-                        <button className="absolute right-1 top-1/2 -translate-y-1/2 bg-[#FF5E4D] text-white p-2 rounded-full hover:bg-orange-600">
-                            <Search size={18} />
-                        </button>
-                    </div>
+                    {/* === SEARCH BAR ĐÃ TÁCH RA COMPONENT RIÊNG ĐỂ TỐI ƯU === */}
+                    <Suspense fallback={<div className="flex-1 max-w-xl hidden md:block bg-gray-100 h-10 rounded-full"></div>}>
+                        <SearchBar />
+                    </Suspense>
 
-                    {/* Icons */}
+                    {/* Icons Area */}
                     <div className="flex items-center gap-4 md:gap-6">
-                        <div className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D]">
-                            <Heart size={20} /> <span className="text-[10px] md:text-xs">Yêu thích</span>
-                        </div>
+                        <Link href="/wishlist" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] transition-colors group">
+                            <Heart size={20} className="group-hover:scale-110 transition-transform"/> 
+                            <span className="text-[10px] md:text-xs font-medium">Yêu thích</span>
+                        </Link>
+
                         {isMounted && isLoggedIn ? (
-               // ĐÃ ĐĂNG NHẬP
-               <div className="flex flex-col items-center gap-1 cursor-pointer group relative hover:text-[#FF5E4D]">
-                <Link href={"/profile"}>
-                  <User size={20} strokeWidth={1.5} />
-                  <span className="text-[10px] md:text-xs font-medium">{user?.username}</span>
-                </Link>
-                  
-                  {/* Menu con: Đăng xuất
-                  <div className="absolute top-full right-0 mt-2 w-32 bg-white shadow-lg rounded border border-gray-100 hidden group-hover:block z-50">
-                     <button 
-                        onClick={logout}
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 text-red-500"
-                     >
-                        Đăng xuất
-                     </button>
-                  </div> */}
-               </div>
-            ) : (
-               // CHƯA ĐĂNG NHẬP
-               <Link href="/login" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D]">
-                  <User size={20} strokeWidth={1.5} />
-                  <span className="text-[10px] md:text-xs font-medium">Tài khoản</span>
-               </Link>
-            )}
-                        <div className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] relative">
-                            <Link href="/cart" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] relative group">
-                                <div className="relative">
-                                    <ShoppingBag size={20} strokeWidth={1.5} />
-                                    {/* HIỂN THỊ SỐ LƯỢNG THẬT */}
-                                    {isMounted && totalItems > 0 && (
-                                        <span className="absolute -top-1.5 -right-1.5 bg-[#FF5E4D] text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-bounce">
-                                            {totalItems}
-                                        </span>
-                                    )}
-                                </div>
-                                <span className="text-[10px] md:text-xs font-medium">Giỏ hàng</span>
+                            <Link href="/profile" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] transition-colors group">
+                                <User size={20} strokeWidth={1.5} className="group-hover:scale-110 transition-transform"/>
+                                <span className="text-[10px] md:text-xs font-medium truncate max-w-[80px]">{user?.username}</span>
                             </Link>
-                        </div>
+                        ) : (
+                            <Link href="/login" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] transition-colors group">
+                                <User size={20} strokeWidth={1.5} className="group-hover:scale-110 transition-transform"/>
+                                <span className="text-[10px] md:text-xs font-medium">Tài khoản</span>
+                            </Link>
+                        )}
+
+                        <Link href="/cart" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] relative group transition-colors">
+                            <div className="relative group-hover:scale-110 transition-transform">
+                                <ShoppingBag size={20} strokeWidth={1.5} />
+                                {isMounted && totalItems > 0 && (
+                                    <span className="absolute -top-1.5 -right-1.5 bg-[#FF5E4D] text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-bounce">
+                                        {totalItems}
+                                    </span>
+                                )}
+                            </div>
+                            <span className="text-[10px] md:text-xs font-medium">Giỏ hàng</span>
+                        </Link>
                     </div>
                 </div>
 
-                {/* NAVIGATION */}
-                <nav className="border-t border-gray-100 py-4 overflow-x-auto">
-                    <ul className="flex items-center gap-6 md:gap-8 text-sm font-semibold text-gray-700 whitespace-nowrap">
-                        <li><Link href="/" className="text-[#FF5E4D]">Trang chủ</Link></li>
-                        <li><Link href="/products" className="hover:text-[#FF5E4D]">Sản phẩm</Link></li>
-                        <li><Link href="/products" className="hover:text-[#FF5E4D]">Danh mục sản phẩm</Link></li>
-                        <li><Link href="/blog" className="hover:text-[#FF5E4D]">Tin tức</Link></li>
-                        {/* <li><Link href="/footer" className="hover:text-[#FF5E4D]">Liên hệ</Link></li> */}
+                {/* Navigation (Giữ nguyên như cũ) */}
+                <nav className="border-t border-gray-100 py-4 relative">
+                    <ul className="flex items-center gap-6 md:gap-8 text-sm font-semibold text-gray-700">
+                        <li><Link href="/" className="hover:text-[#FF5E4D] transition-colors">Trang chủ</Link></li>
+                        <li><Link href="/products" className="hover:text-[#FF5E4D] transition-colors">Sản phẩm</Link></li>
+                        
+                        <li className="group relative py-2"> 
+                            <Link href="/categories" className="flex items-center gap-1 hover:text-[#FF5E4D] transition-colors cursor-pointer">
+                                Danh mục sản phẩm <ChevronDown size={16} className="group-hover:rotate-180 transition-transform duration-300"/>
+                            </Link>
+                            <div className="absolute top-full left-0 pt-2 w-[280px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-in-out z-50 transform translate-y-4 group-hover:translate-y-0">
+                                <div className="bg-white shadow-xl rounded-lg border border-gray-100 overflow-hidden">
+                                    {isLoading ? (
+                                        <div className="p-4 space-y-3">
+                                            {[1, 2, 3].map((i) => <div key={i} className="h-4 bg-gray-100 rounded w-full animate-pulse"></div>)}
+                                        </div>
+                                    ) : (
+                                        <ul className="flex flex-col max-h-[60vh] overflow-y-auto custom-scrollbar">
+                                            {categories.map((cat) => (
+                                                <li key={cat.id}>
+                                                    <Link href={`/products?category=${cat.slug}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 hover:text-[#FF5E4D] border-b border-gray-50 last:border-none transition-colors">
+                                                        <span className="font-medium">{cat.name}</span>
+                                                    </Link>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            </div>
+                        </li>
+                        <li><Link href="/blog" className="hover:text-[#FF5E4D] transition-colors">Tin tức</Link></li>
                     </ul>
                 </nav>
-
             </div>
         </header>
     );

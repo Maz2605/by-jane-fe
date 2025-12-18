@@ -2,7 +2,7 @@ import { fetchAPI, getStrapiMedia } from "./base";
 import qs from "qs";
 
 // =========================================================
-// 1. TYPE DEFINITIONS (Định nghĩa kiểu dữ liệu chuẩn)
+// 1. TYPE DEFINITIONS
 // =========================================================
 
 export interface MediaItem {
@@ -28,23 +28,22 @@ export interface Product {
   price: number;
   originalPrice: number | null;
   discount: number;
-  image: string;          // Ảnh đại diện (luôn là ảnh tĩnh để hiện ở Card)
-  gallery: MediaItem[];   // Danh sách media (gồm cả ảnh và video cho Slider)
+  image: string;          
+  gallery: MediaItem[];   
   variants: ProductVariant[];
   colors: string[];
   description: string;
 }
 
 // =========================================================
-// 2. HELPER: FORMAT DỮ LIỆU (CORE LOGIC)
+// 2. HELPER: FORMAT DỮ LIỆU
 // =========================================================
 
 export function formatProductData(item: any): Product {
-  // A. Lấy thông tin cơ bản (Support Strapi v4 & v5 nested attributes)
   const attrs = item.attributes || item;
   const name = attrs.Name || attrs.name;
 
-  // B. Xử lý Giá & Giảm giá
+  // Xử lý Giá & Giảm giá
   const price = attrs.Price || attrs.price || 0;
   const rawOriginalPrice = attrs.OriginalPrice || attrs.originalPrice;
 
@@ -56,45 +55,38 @@ export function formatProductData(item: any): Product {
     discountPercent = Math.round(((rawOriginalPrice - price) / rawOriginalPrice) * 100);
   }
 
-  // C. Xử lý Media (Ảnh & Video)
+  // Xử lý Media
   const gallery: MediaItem[] = [];
 
-  // Hàm helper nội bộ để xử lý từng file media
   const processMedia = (mediaData: any) => {
     if (!mediaData) return;
-    
-    // Xử lý structure của Strapi (đôi khi media nằm trong attributes, đôi khi không)
     const mediaAttrs = mediaData.attributes || mediaData;
     const url = getStrapiMedia(mediaAttrs.url);
     const mime = mediaAttrs.mime || "";
 
     if (url) {
       gallery.push({
-        id: mediaData.id || Math.random(), // Fallback ID nếu thiếu
+        id: mediaData.id || Math.random(),
         url: url,
-        // Logic nhận diện Video: check chuỗi mime type (vd: "video/mp4")
         type: mime.startsWith("video") ? "video" : "image",
         mime: mime,
       });
     }
   };
 
-  // 1. Lấy từ field "Image" (Ảnh chính)
+  // Image & Images
   const mainImgData = attrs.Image || attrs.image;
   if (Array.isArray(mainImgData)) mainImgData.forEach(processMedia);
   else processMedia(mainImgData);
 
-  // 2. Lấy từ field "Images" (Gallery phụ)
   const galleryData = attrs.Images || attrs.images;
   if (Array.isArray(galleryData)) galleryData.forEach(processMedia);
   else processMedia(galleryData);
 
-  // 3. Chọn ảnh đại diện (Thumbnail) cho Card sản phẩm
-  // Logic: Tìm item đầu tiên là IMAGE. Nếu không có image nào thì dùng placeholder.
   const firstImage = gallery.find((m) => m.type === "image");
   const thumbnailUrl = firstImage ? firstImage.url : "/images/placeholder.png";
 
-  // D. Xử lý Biến thể (Variants)
+  // Variants
   const variantsData = attrs.Variants || attrs.variants || [];
   const variants: ProductVariant[] = variantsData.map((v: any) => ({
     id: v.id,
@@ -104,13 +96,11 @@ export function formatProductData(item: any): Product {
     stock: v.Stock || v.stock || 0,
   }));
 
-  // E. Xử lý Danh mục
+  // Category Slug
   const catData = attrs.Category || attrs.category;
-  // Deep check để lấy slug danh mục an toàn
   const catAttrs = catData?.data?.attributes || catData?.attributes || catData;
   const categorySlug = catAttrs?.Slug || catAttrs?.slug || null;
 
-  // Lấy danh sách màu unique
   const allColors = variants.map((v) => v.colorCode).filter(Boolean);
 
   return {
@@ -121,8 +111,8 @@ export function formatProductData(item: any): Product {
     price: price,
     originalPrice: finalOriginalPrice,
     discount: discountPercent,
-    image: thumbnailUrl,     // String: dùng cho Product Card
-    gallery: gallery,        // Array Object: dùng cho Product Gallery (có video)
+    image: thumbnailUrl,     
+    gallery: gallery,        
     variants: variants,
     colors: [...new Set(allColors)],
     description: attrs.Description || attrs.description || "",
@@ -130,7 +120,7 @@ export function formatProductData(item: any): Product {
 }
 
 // =========================================================
-// 3. THUẬT TOÁN RANDOM THEO NGÀY (Seeded Random)
+// 3. THUẬT TOÁN RANDOM
 // =========================================================
 function shuffleArrayDaily(array: Product[]) {
   const dateSeed = parseInt(new Date().toISOString().slice(0, 10).replace(/-/g, ""));
@@ -153,25 +143,25 @@ function shuffleArrayDaily(array: Product[]) {
 }
 
 // =========================================================
-// 4. API METHODS (Các hàm gọi dữ liệu)
+// 4. API METHODS (CORE)
 // =========================================================
 
-// A. Trang chủ (Random products)
+// A. Trang chủ
 export async function getDailyRandomProducts() {
   const data = await fetchAPI("/products?populate=*&pagination[limit]=100");
   if (!data || !data.data) return [];
-  
   const products = data.data.map(formatProductData);
   return shuffleArrayDaily(products);
 }
 
-// B. Trang cửa hàng (Filter, Sort, Paginate)
+// B. Trang cửa hàng (GET PRODUCTS - SAFE MODE)
 export async function getProducts(
   categorySlug?: string,
   sort?: string,
   priceRange?: string,
   page: number = 1,
-  pageSize: number = 12
+  pageSize: number = 12,
+  search?: string 
 ) {
   const query: any = {
     populate: "*",
@@ -183,7 +173,17 @@ export async function getProducts(
     filters: {},
   };
 
-  // Lọc theo Danh mục
+  // --- LOGIC SEARCH AN TOÀN (SAFE MODE) ---
+  // Chỉ tìm kiếm theo Tên sản phẩm để tránh lỗi 400 Bad Request
+  if (search) {
+    query.filters.name = {
+      $containsi: search, // Tìm kiếm gần đúng, không phân biệt hoa thường
+    };
+  }
+
+  // --- CÁC FILTER KHÁC ---
+  
+  // Lọc theo Category
   if (categorySlug) {
     query.filters.category = {
       slug: { $eq: categorySlug },
@@ -193,12 +193,15 @@ export async function getProducts(
   // Lọc theo Giá
   if (priceRange) {
     const [min, max] = priceRange.split("-");
-    query.filters.price = {};
-    if (min) query.filters.price.$gte = min;
-    if (max) query.filters.price.$lte = max;
+    query.filters.price = query.filters.price || {};
+    if (min) query.filters.price.$gte = Number(min);
+    if (max) query.filters.price.$lte = Number(max);
   }
 
+  // Tạo query string
   const queryString = qs.stringify(query, { encodeValuesOnly: true });
+  
+  // Gọi API
   const data = await fetchAPI(`/products?${queryString}`);
 
   if (!data || !data.data) return { data: [], meta: null };
@@ -209,26 +212,19 @@ export async function getProducts(
   };
 }
 
-// C. Trang chi tiết (Detail)
+// C. Chi tiết sản phẩm
 export async function getProductById(id: string) {
-  // Dùng filter id để an toàn nhất với Strapi v5
   const data = await fetchAPI(`/products?filters[id][$eq]=${id}&populate=*`);
-  
   if (!data || !data.data || data.data.length === 0) return null;
-
   return formatProductData(data.data[0]);
 }
 
 // D. Sản phẩm liên quan
 export async function getRelatedProducts(currentProductId: number, categorySlug?: string) {
   let url = "/products?populate=*&pagination[limit]=10";
-
-  // 1. Lọc cùng danh mục
   if (categorySlug) {
     url += `&filters[category][slug][$eq]=${categorySlug}`;
   }
-
-  // 2. Loại trừ sản phẩm đang xem
   url += `&filters[id][$ne]=${currentProductId}`;
 
   const data = await fetchAPI(url);
