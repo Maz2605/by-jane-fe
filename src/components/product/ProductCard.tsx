@@ -3,8 +3,7 @@ import { ShoppingCart } from "lucide-react";
 // 1. QUAN TRỌNG: Import Type từ Single Source of Truth
 import { Product } from "@/services/product"; 
 
-// 2. XÓA BỎ interface ProductProps tự định nghĩa
-// interface ProductProps { ... } -> DELETE
+
 
 export default function ProductCard({ product }: { product: Product }) {
   return (

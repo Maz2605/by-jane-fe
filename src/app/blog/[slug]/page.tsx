@@ -1,185 +1,186 @@
-"use client";
-
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Clock, User, Play, Tag } from "lucide-react";
+import { Clock, User, ChevronLeft, Tag } from "lucide-react";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
+import { Montserrat } from "next/font/google";
 
-// --- DỮ LIỆU GIẢ ---
-const ARTICLE_DETAIL = {
-  id: 1,
-  title: "Xu hướng màu sắc Thu Đông 2024: Khi sắc đỏ Cherry thống trị mọi sàn diễn",
-  category: "TRENDS",
-  author: "Nguyễn Anh Dũng",
-  authorRole: "Fashion Editor",
-  authorAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200&auto=format&fit=crop",
-  publishedDate: "18/11/2024",
-  coverImage: "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1200&auto=format&fit=crop",
-  tags: ["Fashion Week", "Fall Winter 2024", "Color Trends", "Street Style"],
-  // Nội dung HTML - Tôi đã thêm một số thẻ để test khoảng cách
-  content: `
-    <p class="lead">Không còn là những gam màu trầm buồn tẻ, mùa đông năm nay đánh dấu sự trở lại ngoạn mục của sắc đỏ rực rỡ. Từ áo khoác dạ, túi xách cho đến những đôi boots da, tất cả đều được phủ lên một vẻ quyến rũ khó cưỡng.</p>
-    
-    <h2>Sự trỗi dậy của "Cherry Red"</h2>
-    <p>Nếu như năm ngoái là sự thống trị của màu hồng Barbie (Barbiecore), thì năm nay, các nhà mốt lớn như Gucci, Ferragamo đều đồng loạt lăng xê sắc đỏ thẫm (Cherry Red). Đây là gam màu tượng trưng cho quyền lực, sự quyến rũ và một chút bí ẩn.</p>
-    
-    <div class="image-wrapper">
-      <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000&auto=format&fit=crop" alt="Mẫu áo khoác đỏ" />
-      <span class="caption text-center text-sm text-gray-500 mt-2 block italic">Áo khoác dáng dài là item "must-have" mùa này.</span>
-    </div>
+// Import Service & Component
+import { getArticleBySlug, mapStrapiArticleToFrontend } from "@/services/article";
+import RichText from "@/components/news/RichText";
 
-    <p>Không quá chói lọi như đỏ tươi, đỏ Cherry mang sắc thái trầm hơn, dễ dàng phối hợp với các gam màu trung tính như đen, trắng, xám hoặc be. Sự kết hợp này tạo nên tổng thể vừa nổi bật vừa tinh tế.</p>
+// 1. IMPORT COMPONENT SHARE MỚI
+import ShareButton from "@/components/news/ShareButton";
 
-    <h2>Cách phối đồ với sắc đỏ</h2>
-    <p>Để mặc đẹp với gam màu này mà không bị "sến", bạn nên áp dụng quy tắc điểm nhấn (Pop of Red). Thay vì diện cả cây đỏ (trừ khi bạn rất tự tin), hãy thử bắt đầu với một chiếc túi xách, một đôi giày hoặc đơn giản là màu son môi.</p>
-  `,
-  // Video dưới cùng
-  featuredVideo: {
-    thumbnail: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=1200&auto=format&fit=crop",
-    title: "Runway Highlights: Fall Winter 2024 Collection",
-    duration: "12:30"
+// Cấu hình Font
+const montserrat = Montserrat({
+  subsets: ["vietnamese"],
+  weight: ["400", "500", "700", "800"],
+});
+
+type Params = Promise<{ slug: string }>;
+
+export default async function ArticleDetailPage(props: { params: Params }) {
+  const params = await props.params;
+  const { slug } = params;
+
+  const rawData = await getArticleBySlug(slug);
+  const article = mapStrapiArticleToFrontend(rawData);
+
+  if (!article) {
+    return (
+      <div className={`flex flex-col min-h-screen ${montserrat.className}`}>
+        <Header />
+        <main className="flex-grow flex flex-col items-center justify-center pt-20 pb-20">
+            <h1 className="text-6xl font-extrabold mb-4 text-gray-200">404</h1>
+            <p className="text-gray-500 mb-8 font-medium">Bài viết không tồn tại hoặc đã bị xóa.</p>
+            <Link href="/blog" className="text-red-600 hover:underline font-bold uppercase tracking-widest text-sm">Quay lại Blog</Link>
+        </main>
+        <Footer />
+      </div>
+    );
   }
-};
 
-export default function ArticleDetailPage({ params }: { params: { slug: string } }) {
-  
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className={`flex flex-col min-h-screen bg-white text-gray-900 ${montserrat.className}`}>
       <Header />
 
-      <main className="grow">
+      <main className="flex-grow">
         
-        {/* --- 1. HEADER & COVER --- */}
-        <div className="container mx-auto px-4 pt-12 max-w-4xl text-center">
-            {/* Breadcrumb */}
-            <div className="flex items-center justify-center gap-2 text-xs text-gray-500 uppercase tracking-widest mb-6">
-                <Link href="/" className="hover:text-black transition-colors">Trang chủ</Link>
-                <span>/</span>
-                <span className="text-red-600 font-bold">{ARTICLE_DETAIL.category}</span>
-            </div>
-
-            {/* Title */}
-            <h1 className="text-3xl md:text-5xl font-serif font-bold text-gray-900 leading-tight mb-8">
-                {ARTICLE_DETAIL.title}
-            </h1>
-
-            {/* Meta Info */}
-            <div className="flex items-center justify-center gap-6 text-sm text-gray-500 mb-10">
-                <span className="flex items-center gap-2">
-                    <User size={16}/> {ARTICLE_DETAIL.author}
-                </span>
-                <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                <span className="flex items-center gap-2">
-                    <Clock size={16}/> {ARTICLE_DETAIL.publishedDate}
-                </span>
-            </div>
-        </div>
-
-        {/* ẢNH BÌA */}
-        <div className="container mx-auto px-4 max-w-5xl mb-16">
-            <div className="relative w-full aspect-21/9 md:aspect-2/1 rounded-2xl overflow-hidden shadow-sm">
+        {/* HERO IMAGE */}
+        <div className="relative w-full h-[60vh] md:h-[75vh]">
+            {article.coverImage ? (
                 <Image 
-                    src={ARTICLE_DETAIL.coverImage} 
-                    alt={ARTICLE_DETAIL.title} 
+                    src={article.coverImage} 
+                    alt={article.title} 
                     fill 
-                    className="object-cover"
-                    priority
+                    className="object-cover" 
+                    priority 
                     unoptimized
                 />
-            </div>
-        </div>
-
-        {/* --- 2. NỘI DUNG BÀI VIẾT (ĐÃ FIX KHOẢNG CÁCH) --- */}
-        <div className="container mx-auto px-4 max-w-3xl">
-            {/* FIX LỖI DÍNH CHỮ VÀ ẢNH Ở ĐÂY:
-                - prose-p:mb-10: Tăng khoảng cách dưới của mỗi đoạn văn lên 40px (cũ là mb-6).
-                - prose-img:my-16: Tăng khoảng cách trên và dưới của ảnh lên 64px (cũ là my-12).
-                - prose-headings:mt-16 và prose-headings:mb-8: Tăng khoảng cách cho các tiêu đề con (h2, h3...).
-                - [&_.image-wrapper]:my-16: Thêm rule riêng để đẩy khoảng cách cho thẻ div bọc ảnh (nếu có).
-            */}
-            <article className="prose prose-lg max-w-none
-                prose-headings:font-serif prose-headings:font-bold prose-headings:mt-16 prose-headings:mb-8 
-                prose-p:mb-10 prose-p:leading-8 text-gray-800
-                prose-img:rounded-xl prose-img:my-16 prose-img:w-full
-                prose-a:text-red-600 hover:prose-a:text-red-700
-                [&_.image-wrapper]:my-16
-            ">
-                <div dangerouslySetInnerHTML={{ __html: ARTICLE_DETAIL.content }} />
-            </article>
-
-            {/* --- 3. TAGS & AUTHOR BIO --- */}
-            <div className="mt-20 pt-10 border-t border-gray-100">
-                
-                {/* Tags */}
-                <div className="flex flex-wrap items-center gap-3 mb-12">
-                    <Tag size={18} className="text-gray-400" />
-                    {ARTICLE_DETAIL.tags.map(tag => (
-                        <span key={tag} className="bg-gray-50 text-gray-600 px-3 py-1 rounded text-sm font-medium hover:bg-gray-100 cursor-pointer transition-colors">
-                            #{tag}
-                        </span>
-                    ))}
-                </div>
-
-                {/* Author Bio Box */}
-                <div className="flex items-center gap-6 bg-gray-50 p-8 rounded-2xl">
-                    <div className="relative w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-full overflow-hidden border-2 border-white shadow-sm">
-                        <Image 
-                            src={ARTICLE_DETAIL.authorAvatar} 
-                            alt={ARTICLE_DETAIL.author} 
-                            fill 
-                            className="object-cover"
-                            unoptimized
-                        />
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Written by</p>
-                        <h4 className="text-lg font-serif font-bold text-gray-900">{ARTICLE_DETAIL.author}</h4>
-                        <p className="text-sm text-gray-500 mt-1">{ARTICLE_DETAIL.authorRole}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {/* --- 4. VIDEO SECTION --- */}
-        <section className="bg-black text-white py-20 mt-20">
-            <div className="container mx-auto px-4 max-w-5xl text-center">
-                <span className="text-xs font-bold text-red-500 tracking-[0.2em] uppercase mb-4 block">Multimedia</span>
-                <h3 className="text-2xl md:text-4xl font-serif font-bold mb-10">Behind The Scenes & Runway</h3>
-                
-                {/* Video Player Wrapper */}
-                <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl border border-gray-800 group cursor-pointer">
-                    <Image 
-                        src={ARTICLE_DETAIL.featuredVideo.thumbnail} 
-                        alt="Video Thumbnail"
-                        fill
-                        className="object-cover opacity-80 group-hover:opacity-60 transition-opacity duration-500"
-                        unoptimized
-                    />
+            ) : (
+                <div className="w-full h-full bg-gray-900 flex items-center justify-center text-gray-700 font-bold">No Cover Image</div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+            
+            <div className="absolute bottom-0 left-0 w-full p-6 md:p-12 text-white">
+                <div className="container mx-auto max-w-6xl">
+                    <Link href="/blog" className="inline-flex items-center gap-2 text-xs md:text-sm uppercase tracking-[0.2em] mb-6 hover:text-red-400 transition font-bold">
+                        <ChevronLeft size={16}/> Back to Journal
+                    </Link>
                     
-                    {/* Play Button */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg">
-                                <Play size={24} className="text-black ml-1 fill-black" />
+                    <h1 className="text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-8 max-w-5xl shadow-sm">
+                        {article.title}
+                    </h1>
+                    
+                    <div className="flex flex-wrap items-center gap-6 text-sm font-semibold opacity-90">
+                        <span className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
+                            <User size={16}/> {article.author}
+                        </span>
+                        <span className="flex items-center gap-2">
+                            <Clock size={16}/> {article.publishedDate}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* MAIN LAYOUT */}
+        <div className="container mx-auto px-4 py-16 max-w-6xl">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                
+                {/* CỘT TRÁI */}
+                <div className="lg:col-span-8">
+                    
+                    {/* SAPO */}
+                    {article.description && (
+                        <div className="text-lg md:text-xl font-semibold text-gray-700 mb-10 border-l-4 border-red-600 pl-6 leading-relaxed bg-gray-50 py-6 rounded-r-lg">
+                            {article.description}
+                        </div>
+                    )}
+
+                    {/* VIDEO */}
+                    {article.video && (
+                        <div className="mb-12 group relative rounded-xl overflow-hidden shadow-2xl bg-black aspect-video">
+                             <video 
+                                controls 
+                                className="w-full h-full object-contain"
+                                poster={article.coverImage || undefined}
+                             >
+                                <source src={article.video} type="video/mp4" />
+                                Trình duyệt của bạn không hỗ trợ thẻ video.
+                            </video>
+                        </div>
+                    )}
+
+                    {/* NỘI DUNG CHÍNH */}
+                    <article className="prose prose-lg max-w-none 
+                        prose-headings:font-extrabold prose-headings:text-gray-900 
+                        prose-p:font-medium prose-p:text-gray-700 prose-p:leading-8
+                        prose-img:rounded-xl prose-a:text-red-600 prose-a:font-bold prose-a:no-underline hover:prose-a:underline">
+                        {article.content ? (
+                            <RichText content={article.content} />
+                        ) : (
+                            <p className="text-gray-400 font-medium bg-gray-50 p-4 rounded text-center">Nội dung bài viết đang được cập nhật...</p>
+                        )}
+                    </article>
+
+                    {/* GALLERY */}
+                    {article.gallery && article.gallery.length > 0 && (
+                        <div className="mt-16 pt-10 border-t border-gray-100">
+                            <h3 className="text-2xl font-extrabold mb-6 flex items-center gap-3 uppercase tracking-wide">
+                                <span className="w-8 h-[4px] bg-red-600"></span> Lookbook Gallery
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {article.gallery.map((img: string, idx: number) => (
+                                    <div 
+                                        key={idx} 
+                                        className={`relative rounded-xl overflow-hidden shadow-sm aspect-[3/4] cursor-pointer group ${idx === 0 ? 'md:col-span-2 md:aspect-[2/1]' : ''}`}
+                                    >
+                                        <Image 
+                                            src={img} 
+                                            alt={`Gallery Image ${idx + 1}`} 
+                                            fill 
+                                            className="object-cover transition-transform duration-700 group-hover:scale-105" 
+                                            unoptimized 
+                                        />
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                    </div>
+                    )}
 
-                    {/* Video Info */}
-                    <div className="absolute bottom-0 left-0 right-0 p-8 bg-linear-to-t from-black/90 to-transparent text-left">
-                        <h4 className="text-xl font-bold mb-1">{ARTICLE_DETAIL.featuredVideo.title}</h4>
-                        <p className="text-gray-400 text-sm flex items-center gap-2">
-                            <Clock size={14}/> {ARTICLE_DETAIL.featuredVideo.duration}
-                        </p>
+                    {/* FOOTER BÀI VIẾT */}
+                    <div className="mt-12 pt-8 border-t border-gray-200 flex flex-wrap justify-between items-center gap-4">
+                        <div className="flex gap-2 text-sm font-bold text-gray-600 items-center">
+                             <Tag size={18} className="text-red-600" /> Fashion, Trends, 2025
+                        </div>
+                        
+                        {/* 2. SỬ DỤNG COMPONENT SHAREBUTTON Ở ĐÂY */}
+                        <ShareButton title={article.title} slug={article.slug} />
+                        
                     </div>
                 </div>
+
+                {/* CỘT PHẢI */}
+                <aside className="lg:col-span-4 space-y-10">
+                    <div className="bg-gray-50 p-8 rounded-2xl text-center border border-gray-100">
+                        <div className="w-20 h-20 bg-white rounded-full mx-auto mb-4 overflow-hidden relative border-2 border-gray-100 shadow-sm flex items-center justify-center">
+                             <span className="text-3xl font-extrabold text-gray-300">
+                                {article.author.charAt(0)}
+                             </span>
+                        </div>
+                        <p className="text-xs font-extrabold uppercase tracking-widest text-red-600 mb-2">Written By</p>
+                        <h4 className="text-xl font-extrabold text-gray-900">{article.author}</h4>
+                        <p className="text-sm font-semibold text-gray-500 mt-2">Fashion Editor & Stylist</p>
+                    </div>
+                </aside>
             </div>
-        </section>
+        </div>
 
       </main>
-
       <Footer />
     </div>
   );

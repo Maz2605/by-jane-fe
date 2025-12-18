@@ -46,10 +46,10 @@ export default function CartSummary({
                 </button>
             </div>
             
-            <div className="flex items-center gap-1 text-[#FF5E4D] cursor-pointer hover:opacity-80">
+            {/* <div className="flex items-center gap-1 text-[#FF5E4D] cursor-pointer hover:opacity-80">
                 <TicketPercent size={18} />
                 <span className="text-sm font-medium">Chọn hoặc nhập mã Voucher</span>
-            </div>
+            </div> */}
         </div>
 
         {/* Bên phải */}

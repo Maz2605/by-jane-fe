@@ -163,7 +163,7 @@ export default function Header() {
                         <li><Link href="/products" className="hover:text-[#FF5E4D] transition-colors">Sản phẩm</Link></li>
                         
                         <li className="group relative py-2"> 
-                            <Link href="/categories" className="flex items-center gap-1 hover:text-[#FF5E4D] transition-colors cursor-pointer">
+                            <Link href="" className="flex items-center gap-1 hover:text-[#FF5E4D] transition-colors cursor-pointer">
                                 Danh mục sản phẩm <ChevronDown size={16} className="group-hover:rotate-180 transition-transform duration-300"/>
                             </Link>
                             <div className="absolute top-full left-0 pt-2 w-[280px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-in-out z-50 transform translate-y-4 group-hover:translate-y-0">

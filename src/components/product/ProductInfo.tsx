@@ -188,10 +188,6 @@ export default function ProductInfo({ product }: { product: Product }) {
                 Kích cỡ: <span className="font-normal text-gray-500">{selectedSize}</span>
             </span>
             <button className="text-xs text-[#FF5E4D] hover:underline flex items-center gap-1">
-                
-
-[Image of size chart guide]
-
                 📏 Bảng kích thước
             </button>
         </div>

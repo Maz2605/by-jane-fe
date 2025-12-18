@@ -1,61 +1,57 @@
-"use client";
-
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+
+// Import Font (Cho đồng bộ giao diện Tạp chí)
+import { Montserrat } from "next/font/google";
+
+// Import Service & Mappers
+import { getArticles, mapStrapiArticleToFrontend } from "@/services/article";
+
+// Import UI Components
 import FeaturedNewsCard from "./FeaturedNewsCard";
 import NewsCard from "./NewsCard";
-import { Article, Banner } from "@/types/news";
-
 import SectionTitle from "../common/SectionTitle";
 
-// --- MOCK DATA (Quay về 2 tin nhỏ) ---
-const MOCK_DATA = {
-  featured: {
-    id: 1,
-    title: "4 món đồ họa tiết đáng sắm để phong cách trẻ trung hơn",
-    slug: "4-mon-do-hoa-tiet",
-    description: "Thời trang mùa lạnh không nên chỉ giới hạn với những món đồ trơn màu. Khi bổ sung cho tủ đồ các item họa tiết, phong cách của chị em sẽ trở nên đa dạng và trẻ trung hơn.",
-    coverImage: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000&auto=format&fit=crop",
-    author: "Nguyễn Anh Dũng",
-    publishedDate: "18/11/2024",
-    mediaType: "video",
-  } as Article,
+// Cấu hình Font
+const montserrat = Montserrat({
+  subsets: ["vietnamese"],
+  weight: ["400", "500", "600", "700", "800"],
+});
 
-  banner: {
-    id: 99,
-    title: "BỘ SƯU TẬP THU ĐÔNG 2024",
-    subTitle: "SẮP RA MẮT",
-    coverImage: "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1000&auto=format&fit=crop",
-    link: "/collections/winter-2024",
-  } as Banner,
-
-  list: [
-    {
-      id: 2,
-      title: "5 món thời trang tối giản được phụ nữ Pháp diện mãi không chán",
-      slug: "5-mon-thoi-trang-toi-gian",
-      publishedDate: "18/11/2024",
-      author: "Nguyễn Anh Dũng",
-      coverImage: "https://images.unsplash.com/photo-1550614000-4b9519e007ac?q=80&w=500&auto=format&fit=crop",
-      mediaType: "standard",
-    },
-    {
-      id: 3,
-      title: "4 kiểu áo tối giản được phụ nữ Nhật Bản yêu thích trong mùa thu",
-      slug: "4-kieu-ao-toi-gian",
-      publishedDate: "18/11/2024",
-      author: "Nguyễn Anh Dũng",
-      coverImage: "https://images.unsplash.com/photo-1552874869-5c39ec5f842c?q=80&w=500&auto=format&fit=crop",
-      mediaType: "standard",
-    },
-  ] as Article[],
+// --- BANNER TĨNH (Giữ nguyên hoặc lấy từ API Global sau này) ---
+const STATIC_BANNER = {
+  id: 99,
+  title: "BỘ SƯU TẬP THU ĐÔNG 2025",
+  subTitle: "SẮP RA MẮT",
+  coverImage: "/images/banners/banner.png",
+  link: "/blog", // Tạm thời link về blog
 };
 
-export default function HomeNewsSection() {
+export default async function HomeNewsSection() {
+  // 1. GỌI API: Lấy 3 bài viết mới nhất
+  const { data: rawData } = await getArticles({
+    pagination: {
+      page: 1,
+      pageSize: 3, // Lấy 3 bài (1 bài to + 2 bài nhỏ)
+    },
+  });
+
+  // 2. MAP DATA: Chuyển đổi dữ liệu Strapi sang chuẩn Frontend
+  const articles = (rawData || []).map(mapStrapiArticleToFrontend);
+
+  // 3. CHIA LAYOUT
+  // Bài đầu tiên là Featured
+  const featuredArticle = articles[0];
+  // 2 bài tiếp theo là List
+  const listArticles = articles.slice(1, 3);
+
+  // Xử lý trường hợp chưa có bài viết nào
+  if (!featuredArticle) return null;
+
   return (
-    <section className="py-16 bg-white">
+    <section className={`py-16 bg-white ${montserrat.className}`}>
       <div className="container mx-auto px-4">
         
         <SectionTitle title="TIN TỨC MỚI NHẤT"/>
@@ -63,40 +59,55 @@ export default function HomeNewsSection() {
         {/* --- GRID LAYOUT --- */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
           
-          {/* CỘT TRÁI (Featured) */}
+          {/* CỘT TRÁI (Featured - Bài mới nhất) */}
           <div className="w-full h-full">
-             <FeaturedNewsCard data={MOCK_DATA.featured} />
+             {/* Adapter: Truyền thêm mediaType để Card hiển thị icon video nếu có */}
+             <FeaturedNewsCard 
+                data={{
+                    ...featuredArticle,
+                    mediaType: featuredArticle.video ? "video" : "standard"
+                }} 
+             />
           </div>
 
           {/* CỘT PHẢI (Banner + 2 Tin nhỏ) */}
           <div className="flex flex-col justify-between h-full gap-6">
             
-            {/* Banner Block */}
-            <Link href={MOCK_DATA.banner.link} className="relative w-full aspect-[2.2/1] rounded-2xl overflow-hidden group shadow-sm">
+            {/* Banner Block (Tĩnh) */}
+            <Link href={STATIC_BANNER.link} className="relative w-full aspect-[2.2/1] rounded-2xl overflow-hidden group shadow-sm">
                 <Image 
-                    src={MOCK_DATA.banner.coverImage}
+                    src={STATIC_BANNER.coverImage}
                     alt="Banner"
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                     unoptimized={true} 
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent flex flex-col justify-center p-8 text-white">
-                    <span className="bg-white text-black text-[10px] font-bold px-2 py-1 w-fit mb-3 uppercase tracking-wider">
-                        {MOCK_DATA.banner.subTitle}
+                    <span className="bg-white text-black text-[10px] font-extrabold px-2 py-1 w-fit mb-3 uppercase tracking-wider">
+                        {STATIC_BANNER.subTitle}
                     </span>
-                    <h3 className="text-2xl md:text-3xl font-bold uppercase leading-none max-w-[80%]">
-                        {MOCK_DATA.banner.title}
+                    <h3 className="text-2xl md:text-3xl font-extrabold uppercase leading-none max-w-[80%]">
+                        {STATIC_BANNER.title}
                     </h3>
                 </div>
             </Link>
 
-            {/* List 2 tin nhỏ */}
+            {/* List 2 tin nhỏ (Lấy từ API) */}
             <div className="flex flex-col gap-5">
-                {MOCK_DATA.list.map((item) => (
-                    <div key={item.id} className="pb-4 border-b border-gray-100 last:border-0 last:pb-0">
-                        <NewsCard data={item} />
-                    </div>
-                ))}
+                {listArticles.length > 0 ? (
+                    listArticles.map((item: any) => (
+                        <div key={item.id} className="pb-4 border-b border-gray-100 last:border-0 last:pb-0">
+                            <NewsCard 
+                                data={{
+                                    ...item,
+                                    mediaType: item.video ? "video" : "standard"
+                                }} 
+                            />
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-gray-400 text-sm italic">Đang cập nhật thêm tin tức...</p>
+                )}
             </div>
 
           </div>
@@ -104,9 +115,9 @@ export default function HomeNewsSection() {
 
         {/* Footer Button */}
         <div className="flex justify-center mt-12">
-            <Link href="/blog" className="group flex items-center gap-2 text-gray-900 font-semibold hover:text-red-500 transition-colors">
+            <Link href="/blog" className="group flex items-center gap-2 text-gray-900 font-bold hover:text-red-600 transition-colors uppercase tracking-wide text-sm">
                 XEM TẤT CẢ BÀI VIẾT 
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>
+                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform"/>
             </Link>
         </div>
       </div>
