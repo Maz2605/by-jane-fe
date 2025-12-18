@@ -125,10 +125,10 @@ export default function Header() {
 
                     {/* Icons Area */}
                     <div className="flex items-center gap-4 md:gap-6">
-                        <Link href="/wishlist" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] transition-colors group">
+                        {/* <Link href="/wishlist" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] transition-colors group">
                             <Heart size={20} className="group-hover:scale-110 transition-transform"/> 
                             <span className="text-[10px] md:text-xs font-medium">Yêu thích</span>
-                        </Link>
+                        </Link> */}
 
                         {isMounted && isLoggedIn ? (
                             <Link href="/profile" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] transition-colors group">

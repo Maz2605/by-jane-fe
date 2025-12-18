@@ -7,11 +7,12 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, Navigation } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
 
-// 2. Import CSS Swiper
+// @ts-ignore
 import "swiper/css";
+// @ts-ignore
 import "swiper/css/pagination";
+// @ts-ignore
 import "swiper/css/navigation";
-
 // 3. Import Icons
 import { Headset, PackageCheck, Truck, HandCoins, Volume2, VolumeX } from "lucide-react";
 
@@ -19,7 +20,7 @@ import { Headset, PackageCheck, Truck, HandCoins, Volume2, VolumeX } from "lucid
 export interface HeroSlide {
   id: number;
   type: "image" | "video";
-  url: string;      // URL này sẽ là đường dẫn đầy đủ (http://localhost:1337/...)
+  url: string;     
   poster?: string;
   alt?: string;
 }

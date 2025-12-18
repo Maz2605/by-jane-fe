@@ -253,9 +253,9 @@ export default function ProductInfo({ product }: { product: Product }) {
             >
                 Thêm vào giỏ
             </button>
-            <button className="w-12 flex items-center justify-center border-2 border-gray-200 rounded hover:border-[#FF5E4D] hover:text-[#FF5E4D] transition-colors text-gray-400">
+            {/* <button className="w-12 flex items-center justify-center border-2 border-gray-200 rounded hover:border-[#FF5E4D] hover:text-[#FF5E4D] transition-colors text-gray-400">
                 <Heart size={22} />
-            </button>
+            </button> */}
         </div>
         
         <button 
