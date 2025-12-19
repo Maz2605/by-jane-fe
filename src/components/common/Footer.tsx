@@ -28,6 +28,7 @@ export default function Footer() {
                 className="h-auto w-40 object-contain mix-blend-multiply" 
                 // mix-blend-multiply giúp logo JPG tệp vào nền xám nếu logo có nền trắng
                 priority
+                unoptimized = {true}
               />
             </Link>
             <p className="text-sm leading-7 text-gray-500 mb-8 pr-4">
