@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import Header from "@/components/common/Header";
 import Hero from "@/components/home/Hero";
 import CategoryList from "@/components/home/CategoryList";
