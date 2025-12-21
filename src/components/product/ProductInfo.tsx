@@ -1,38 +1,49 @@
 "use client";
 import { useState, useEffect } from "react";
-// import { Heart } from "lucide-react"; 
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/useCartStore";
 import { Product } from "@/services/product";
 
-// 1. Import Toast
-import toast from "react-hot-toast";
+// 1. Thay thế react-hot-toast bằng Custom Toast
+import ToastNotification from "@/components/ui/ToastNotification";
 
 export default function ProductInfo({ product }: { product: Product }) {
   const router = useRouter();
 
-  // State quản lý UI
+  // State UI
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [currentStock, setCurrentStock] = useState(0);
 
-  // Store action
+  // State cho Custom Toast
+  const [toastState, setToastState] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'warning' | 'error';
+    title: string;
+    message: string;
+    action?: React.ReactNode; // State này để chứa nút bấm
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: '',
+  });
+
   const { addToCart, setSelectedCheckoutIds } = useCartStore();
 
-  // --- LOGIC XỬ LÝ DỮ LIỆU SẢN PHẨM ---
+  // Helper tắt toast
+  const handleCloseToast = () => setToastState(prev => ({ ...prev, isOpen: false }));
 
-  // 1. Lọc danh sách màu duy nhất
+  // --- LOGIC XỬ LÝ DỮ LIỆU (Giữ nguyên) ---
   const uniqueColors = Array.from(new Map(product.variants.map(v => [v.color, v])).values());
 
-  // 2. Hàm tìm Size đầu tiên có hàng của một màu
   const findFirstAvailableSize = (color: string) => {
     const variantsOfColor = product.variants.filter(v => v.color === color);
     const available = variantsOfColor.find(v => v.stock > 0);
     return available ? available.size : (variantsOfColor[0]?.size || null);
   };
 
-  // 3. Auto chọn màu/size khi mới vào trang
   useEffect(() => {
     if (uniqueColors.length > 0) {
       const firstColor = uniqueColors[0].color;
@@ -42,12 +53,10 @@ export default function ProductInfo({ product }: { product: Product }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 4. Lọc danh sách size theo màu đang chọn
   const availableSizes = product.variants
     .filter(v => v.color === selectedColor)
     .map(v => ({ size: v.size, stock: v.stock }));
 
-  // 5. Cập nhật tồn kho khi đổi lựa chọn
   useEffect(() => {
     const variant = product.variants.find(
       v => v.color === selectedColor && v.size === selectedSize
@@ -60,16 +69,20 @@ export default function ProductInfo({ product }: { product: Product }) {
     }
   }, [selectedColor, selectedSize, product.variants, quantity]);
 
-  // --- LOGIC GIỎ HÀNG & MUA NGAY ---
+  // --- LOGIC GIỎ HÀNG ---
 
   const createCartItem = () => {
     if (!selectedColor || !selectedSize) {
-      toast.error("Vui lòng chọn màu sắc và kích cỡ");
+      setToastState({
+        isOpen: true,
+        type: 'error',
+        title: 'Chưa chọn thuộc tính',
+        message: 'Vui lòng chọn màu sắc và kích cỡ trước khi mua.'
+      });
       return null;
     }
 
     const uniqueId = `${product.id}-${selectedColor}-${selectedSize}`;
-
     return {
       id: product.id,
       uniqueId: uniqueId,
@@ -78,98 +91,64 @@ export default function ProductInfo({ product }: { product: Product }) {
       image: product.image,
       quantity: quantity,
       maxStock: currentStock,
-      variant: {
-        color: selectedColor,
-        size: selectedSize
-      }
+      variant: { color: selectedColor, size: selectedSize }
     };
   };
 
-  // --- [UPDATED] Handle 1: Thêm vào giỏ với Âm thanh chuẩn ---
+  // --- [UPDATED] Handle Add To Cart ---
   const handleAddToCart = () => {
     const item = createCartItem();
     if (item) {
-      // 1. Cập nhật Store ngay lập tức (Optimistic UI) để app phản hồi nhanh
       addToCart(item);
 
-      // 2. Xử lý Audio Context
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      
-      fetch('/sounds/click.mp3')
-        .then(response => response.arrayBuffer())
-        .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
-        .then(audioBuffer => {
-          const source = audioContext.createBufferSource();
-          source.buffer = audioBuffer;
+      // --- Âm thanh (Giữ nguyên) ---
+      try {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        fetch('/sounds/click.mp3')
+          .then(res => res.arrayBuffer())
+          .then(buf => audioContext.decodeAudioData(buf))
+          .then(audioBuf => {
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuf;
+            const gain = audioContext.createGain();
+            gain.gain.value = 1;
+            source.connect(gain);
+            gain.connect(audioContext.destination);
+            source.start(0);
+          }).catch(() => { });
+      } catch (e) { }
 
-          // Tạo bộ khuếch đại (GainNode)
-          const gainNode = audioContext.createGain();
-          
-          // QUAN TRỌNG: Chỉ để gain = 4 (tăng 400%) là đủ to. 
-          // Để 100 sẽ bị vỡ tiếng (distortion) rất chói tai.
-          gainNode.gain.value = 1;
+      // --- TOAST DESIGN MỚI: TONE-SUR-TONE ---
+      setToastState({
+        isOpen: true,
+        type: 'success', // Toast đang là màu xanh emerald
+        title: 'Đã thêm vào giỏ!',
+        message: `${product.name} - ${selectedColor} (Size ${selectedSize})`,
+        action: (
+          <div className="flex gap-3 mt-1">
+            {/* Nút 1: Ở lại - Dùng nền trắng, viền xanh nhạt */}
+            <button
+              onClick={handleCloseToast}
+              className="flex-1 px-3 py-2 text-xs font-bold text-emerald-700 bg-white border border-emerald-200 rounded-md hover:bg-emerald-50 transition-colors"
+            >
+              Ở lại xem tiếp
+            </button>
 
-          // Nối dây
-          source.connect(gainNode);
-          gainNode.connect(audioContext.destination);
-
-          // Phát âm thanh
-          source.start(0);
-
-          // 3. HIỆN TOAST NGAY KHI ÂM THANH BẮT ĐẦU
-          toast((t) => (
-          <div className="flex flex-col gap-2 min-w-[250px]">
-            {/* Phần nội dung */}
-            <div className="flex items-center gap-3">
-              <div className="text-green-500 text-xl">✓</div>
-              <div className="flex flex-col">
-                <span className="font-bold text-gray-800">Đã thêm vào giỏ!</span>
-                <span className="text-xs text-gray-500">{product.name} - {selectedColor}</span>
-              </div>
-            </div>
-
-            {/* Phần Nút bấm (Yes / No) */}
-            <div className="flex gap-2 mt-2 pt-2 border-t border-gray-100">
-              {/* Nút NO: Chỉ tắt thông báo */}
-              <button
-                onClick={() => toast.dismiss(t.id)}
-                className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
-              >
-                Ở lại
-              </button>
-
-              {/* Nút YES: Chuyển trang checkout */}
-              <button
-                onClick={() => {
-                  toast.dismiss(t.id); // Tắt thông báo
-                  router.push('/checkout'); // Chuyển trang (hoặc /cart)
-                }}
-                className="flex-1 px-3 py-1.5 text-xs font-medium bg-[#FF5E4D] text-white rounded hover:bg-orange-600 transition-colors"
-              >
-                Thanh toán
-              </button>
-            </div>
+            {/* Nút 2: Thanh toán - Dùng nền xanh đậm (Đồng bộ với icon Success) */}
+            <button
+              onClick={() => {
+                handleCloseToast();
+                router.push('/checkout');
+              }}
+              className="flex-1 px-3 py-2 text-xs font-bold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 transition-colors shadow-sm flex items-center justify-center gap-1"
+            >
+              Thanh toán <span className="text-[10px]">→</span>
+            </button>
           </div>
-        ), {
-          duration: 5000, // Để lâu hơn chút (5s) cho user kịp bấm
-          position: 'top-center',
-          style: {
-            background: '#fff',
-            padding: '12px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          },
-        });
-        })
-        .catch(e => {
-          console.error("Audio error:", e);
-          // Fallback: Nếu lỗi âm thanh thì vẫn hiện thông báo để user biết
-          toast.success("Đã thêm vào giỏ hàng!");
-        });
+        )
+      });
     }
   };
-
-  // Handle 2: Mua ngay
   const handleBuyNow = () => {
     const item = createCartItem();
     if (item) {
@@ -235,8 +214,8 @@ export default function ProductInfo({ product }: { product: Product }) {
                 setSelectedSize(findFirstAvailableSize(v.color));
               }}
               className={`min-w-20 h-10 px-3 rounded border text-sm font-medium transition-all flex items-center justify-center gap-2 ${selectedColor === v.color
-                  ? "bg-black text-white border-black shadow-md"
-                  : "bg-white text-gray-700 border-gray-200 hover:border-black"
+                ? "bg-black text-white border-black shadow-md"
+                : "bg-white text-gray-700 border-gray-200 hover:border-black"
                 }`}
               title={v.color}
             >
@@ -265,10 +244,10 @@ export default function ProductInfo({ product }: { product: Product }) {
                 onClick={() => s.stock > 0 && setSelectedSize(s.size)}
                 disabled={s.stock === 0}
                 className={`min-w-10 h-10 px-3 rounded border text-sm font-medium transition-all ${selectedSize === s.size
-                    ? "bg-black text-white border-black"
-                    : s.stock === 0
-                      ? "bg-gray-50 text-gray-300 cursor-not-allowed border-gray-100 line-through"
-                      : "bg-white text-gray-700 border-gray-200 hover:border-black"
+                  ? "bg-black text-white border-black"
+                  : s.stock === 0
+                    ? "bg-gray-50 text-gray-300 cursor-not-allowed border-gray-100 line-through"
+                    : "bg-white text-gray-700 border-gray-200 hover:border-black"
                   }`}
               >
                 {s.size}
@@ -314,20 +293,41 @@ export default function ProductInfo({ product }: { product: Product }) {
           <button
             onClick={handleAddToCart}
             disabled={!selectedSize || currentStock === 0}
-            className="flex-1 bg-black text-white py-3.5 rounded font-bold hover:bg-gray-800 transition-colors uppercase tracking-wide border-2 border-black disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-black text-white py-3.5 rounded font-bold hover:bg-gray-800 transition-colors uppercase tracking-wide border-2 border-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
             Thêm vào giỏ
+
           </button>
         </div>
 
         <button
           onClick={handleBuyNow}
           disabled={!selectedSize || currentStock === 0}
-          className="w-full bg-[#FF5E4D] text-white py-3.5 rounded font-bold hover:bg-orange-600 transition-colors uppercase tracking-wide shadow-lg shadow-orange-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-12 rounded-lg font-bold text-white bg-[#FF5E4D] hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-100 transition-all transform active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {currentStock === 0 ? "Hết hàng" : "Mua ngay"}
+          {currentStock === 0 ? "Hết hàng" : (
+            <>
+              Mua ngay
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </>
+          )}
         </button>
       </div>
+
+      {/* --- RENDER CUSTOM TOAST Ở CUỐI --- */}
+      <ToastNotification
+        isOpen={toastState.isOpen}
+        type={toastState.type}
+        title={toastState.title}
+        message={toastState.message}
+        action={toastState.action} // Truyền nút bấm vào
+        onClose={handleCloseToast}
+      />
 
     </div>
   );

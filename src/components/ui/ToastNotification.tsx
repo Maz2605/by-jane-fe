@@ -1,10 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-// Helper để merge class tailwind (Best practice)
+// Helper để merge class tailwind
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -16,12 +16,13 @@ interface ToastNotificationProps {
   isOpen: boolean;
   onClose: () => void;
   message: string;
-  title?: string; // Tiêu đề tùy chọn
+  title?: string;
   type?: ToastType;
-  duration?: number; // Thời gian tự tắt (ms)
+  duration?: number;
+  action?: React.ReactNode; // <--- MỚI: Thêm prop này để nhận nút bấm
 }
 
-// Config màu sắc và icon dựa trên Type
+// Config màu sắc và icon (Giữ nguyên bản gốc bạn thích)
 const toastConfig = {
   success: {
     bgColor: 'bg-emerald-50',
@@ -45,14 +46,14 @@ const toastConfig = {
       </svg>
     ),
   },
-  warning: { // Dùng cho Logout hoặc cảnh báo
+  warning: {
     bgColor: 'bg-amber-50',
     borderColor: 'border-amber-200',
     textColor: 'text-amber-800',
     iconColor: 'text-amber-500',
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
       </svg>
     ),
   },
@@ -65,33 +66,36 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({
   title,
   type = 'success',
   duration = 3000,
+  action, // <--- Destructure action
 }) => {
-  // Logic tự động đóng sau X giây
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Logic tự động đóng: Nếu có action thì chờ lâu hơn (8s), không thì 3s
   useEffect(() => {
     if (isOpen) {
+      const autoCloseDuration = action ? 8000 : duration;
       const timer = setTimeout(() => {
         onClose();
-      }, duration);
+      }, autoCloseDuration);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, duration, onClose]);
+  }, [isOpen, duration, onClose, action]);
 
-  // Render ra Portal để đảm bảo luôn nằm trên cùng
-  // Nếu bạn dùng Next.js App Router, có thể bỏ createPortal và render trực tiếp ở layout
-  if (typeof document === 'undefined') return null;
+  if (!isMounted) return null;
 
   return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          // --- Animation Logic ---
           initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 20, opacity: 1 }} // Cách top 20px
+          animate={{ y: 20, opacity: 1 }}
           exit={{ y: -100, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 25 }} // Chuyển động nảy nhẹ
-          // -----------------------
-          
-          className="fixed top-0 left-0 right-0 z-[9999] flex justify-center pointer-events-none" // pointer-events-none để không chặn click chuột xung quanh
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          className="fixed top-0 left-0 right-0 z-[9999] flex justify-center pointer-events-none px-4"
         >
           <div
             className={cn(
@@ -105,22 +109,32 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({
               {toastConfig[type].icon}
             </div>
 
-            {/* Content */}
-            <div className="flex-1">
-              {title && (
-                <h3 className={cn("text-sm font-semibold", toastConfig[type].textColor)}>
-                  {title}
-                </h3>
+            {/* Content Container */}
+            <div className="flex-1 min-w-0">
+              {/* Title & Message */}
+              <div>
+                {title && (
+                  <h3 className={cn("text-sm font-bold", toastConfig[type].textColor)}>
+                    {title}
+                  </h3>
+                )}
+                <p className={cn("text-sm mt-1 leading-relaxed", toastConfig[type].textColor, !title && "font-medium")}>
+                  {message}
+                </p>
+              </div>
+
+              {/* --- ACTION AREA (Nút bấm hiển thị ở đây) --- */}
+              {action && (
+                <div className="mt-3 animate-enter">
+                  {action}
+                </div>
               )}
-              <p className={cn("text-sm mt-1", toastConfig[type].textColor, !title && "font-medium")}>
-                {message}
-              </p>
             </div>
 
-            {/* Close Button (Optional) */}
+            {/* Close Button */}
             <button
               onClick={onClose}
-              className={cn("flex-shrink-0 -mr-1 -mt-1 p-1 rounded-md hover:bg-black/5 transition-colors", toastConfig[type].textColor)}
+              className={cn("flex-shrink-0 -mr-1 -mt-1 p-1 rounded-md hover:bg-black/10 transition-colors", toastConfig[type].textColor)}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
