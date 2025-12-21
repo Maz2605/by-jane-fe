@@ -26,7 +26,6 @@ export default function Footer() {
                 width={180}
                 height={60}
                 className="h-auto w-40 object-contain mix-blend-multiply" 
-                // mix-blend-multiply giúp logo JPG tệp vào nền xám nếu logo có nền trắng
                 priority
                 unoptimized = {true}
               />
@@ -47,10 +46,10 @@ export default function Footer() {
           <div className="md:col-span-2">
             <h4 className="text-gray-900 font-bold text-base mb-6 uppercase tracking-wider">Về BYJANE</h4>
             <ul className="space-y-3 text-sm">
-              <FooterLink href="/about">Câu chuyện thương hiệu</FooterLink>
-              <FooterLink href="/blog">Tin tức thời trang</FooterLink>
-              <FooterLink href="/recruit">Tuyển dụng</FooterLink>
-              <FooterLink href="/contact">Liên hệ</FooterLink>
+              <FooterLink href="">Câu chuyện thương hiệu</FooterLink>
+              <FooterLink href="">Tin tức thời trang</FooterLink>
+              <FooterLink href="">Tuyển dụng</FooterLink>
+              <FooterLink href="">Liên hệ</FooterLink>
             </ul>
           </div>
 
@@ -58,11 +57,11 @@ export default function Footer() {
           <div className="md:col-span-3">
             <h4 className="text-gray-900 font-bold text-base mb-6 uppercase tracking-wider">Hỗ trợ khách hàng</h4>
             <ul className="space-y-3 text-sm">
-              <FooterLink href="/policy">Chính sách đổi trả</FooterLink>
-              <FooterLink href="/faq">Câu hỏi thường gặp (FAQ)</FooterLink>
-              <FooterLink href="/guide">Hướng dẫn chọn size</FooterLink>
-              <FooterLink href="/payment">Phương thức thanh toán</FooterLink>
-              <FooterLink href="/shipping">Chính sách vận chuyển</FooterLink>
+              <FooterLink href="">Chính sách đổi trả</FooterLink>
+              <FooterLink href="">Câu hỏi thường gặp (FAQ)</FooterLink>
+              <FooterLink href="">Hướng dẫn chọn size</FooterLink>
+              <FooterLink href="">Phương thức thanh toán</FooterLink>
+              <FooterLink href="">Chính sách vận chuyển</FooterLink>
             </ul>
           </div>
 
@@ -97,8 +96,8 @@ export default function Footer() {
           <p>© 2025 HIT Maz. All rights reserved.</p>
           <div className="flex gap-6 mt-4 md:mt-0">
              {/* Thêm các link phụ ở footer bottom thường thấy ở web xịn */}
-            <Link href="/terms" className="hover:text-gray-600 transition-colors">Điều khoản</Link>
-            <Link href="/privacy" className="hover:text-gray-600 transition-colors">Bảo mật</Link>
+            <Link href="" className="hover:text-gray-600 transition-colors">Điều khoản</Link>
+            <Link href="" className="hover:text-gray-600 transition-colors">Bảo mật</Link>
           </div>
         </div>
       </div>
