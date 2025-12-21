@@ -39,9 +39,6 @@ export async function register(username: any, email: any, password: any) {
 export async function updateProfile(userId: number, data: any, token: string) {
     try {
         // Endpoint cập nhật user trong Strapi là: PUT /api/users/{id}
-        // Lưu ý: Endpoint này KHÔNG cần bọc data trong object { data: ... } như các Content-Type khác
-        // Nó nhận trực tiếp payload phẳng: { fullName: "A", address: "B" }
-
         const updatedUser = await fetchAPI(`/users/${userId}`, {
             method: "PUT",
             headers: {
@@ -53,6 +50,34 @@ export async function updateProfile(userId: number, data: any, token: string) {
         return updatedUser;
     } catch (error) {
         console.error("Update Profile Error:", error);
+        throw error;
+    }
+}
+
+// --- MỚI THÊM: Hàm Đổi mật khẩu ---
+export async function changePassword(
+    currentPassword: any, 
+    password: any, 
+    passwordConfirmation: any, 
+    token: string
+) {
+    try {
+        // Endpoint mặc định của Strapi để đổi pass
+        const data = await fetchAPI("/auth/change-password", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`, // Bắt buộc: Phải đăng nhập mới đổi được
+            },
+            body: JSON.stringify({
+                currentPassword,
+                password,
+                passwordConfirmation,
+            }),
+        });
+
+        return data;
+    } catch (error) {
+        console.error("Change Password Error:", error);
         throw error;
     }
 }

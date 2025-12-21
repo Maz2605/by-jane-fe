@@ -1,97 +1,228 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect, useLayoutEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { 
+  User, Mail, Lock, Eye, EyeOff, Loader2, UserPlus, ArrowRight 
+} from "lucide-react"; // Import icon mới: UserPlus
+
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
 import { register } from "@/services/auth";
 import { useAuthStore } from "@/store/useAuthStore";
+import ToastNotification from "@/components/ui/ToastNotification";
 
 export default function RegisterPage() {
   const router = useRouter();
+
+  // ✅ FIX ZUSTAND SELECTOR (Tách lẻ để tránh infinite loop)
   const setAuth = useAuthStore((state) => state.setAuth);
-  
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+
+  // --- GUARD LOGIC ---
+  useLayoutEffect(() => {
+    if (isLoggedIn) {
+      router.replace("/");
+    }
+  }, [isLoggedIn, router]);
+
+  // --- STATE ---
   const [formData, setFormData] = useState({ username: "", email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+
+  // Toast State
+  const [toastState, setToastState] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'warning' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: '',
+  });
+
+  // Prefetch Home
+  useEffect(() => {
+    router.prefetch("/");
+  }, [router]);
+
+  const handleCloseToast = () => setToastState(prev => ({ ...prev, isOpen: false }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    handleCloseToast();
 
     try {
+      // 1. Gọi API Register
       const res = await register(formData.username, formData.email, formData.password);
       
       if (res.jwt) {
-        setAuth(res.user, res.jwt);
-        alert("Đăng ký thành công!");
-        router.push("/");
+        // 2. Thành công -> Hiện Toast trước
+        setToastState({
+          isOpen: true,
+          type: 'success',
+          title: 'Đăng ký thành công',
+          message: `Chào mừng ${res.user.username} gia nhập hệ thống!`,
+        });
+
+        // 3. Delay 1 giây để user tận hưởng niềm vui rồi mới redirect
+        setTimeout(() => {
+          setAuth(res.user, res.jwt); // Lưu vào store
+          router.replace("/");        // Chuyển trang
+          router.refresh();           // Refresh header
+        }, 1000);
+
       } else {
-        // Strapi trả về lỗi chi tiết trong res.error
-        setError(res.error?.message || "Đăng ký thất bại");
+        // Xử lý lỗi từ Strapi trả về (thường nằm trong res.error)
+        const errorMsg = res.error?.message || "Đăng ký thất bại. Vui lòng thử lại.";
+        throw new Error(errorMsg);
       }
-    } catch (err) {
-      setError("Email hoặc tên đăng nhập đã tồn tại.");
-    } finally {
+    } catch (err: any) {
+      console.error("Register Error:", err);
+      setToastState({
+        isOpen: true,
+        type: 'error',
+        title: 'Đăng ký thất bại',
+        message: err.message || "Email hoặc tên đăng nhập đã tồn tại.",
+      });
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <Header />
-      <div className="container mx-auto px-4 py-20 flex justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md border border-gray-100">
-          <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">Đăng ký tài khoản</h1>
-          
-          {error && <div className="bg-red-50 text-red-500 p-3 rounded mb-4 text-sm">{error}</div>}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tên hiển thị</label>
-              <input 
-                required
-                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-[#FF5E4D]"
-                value={formData.username}
-                onChange={(e) => setFormData({...formData, username: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input 
-                type="email" 
-                required
-                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-[#FF5E4D]"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
-              <input 
-                type="password" 
-                required
-                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-[#FF5E4D]"
-                value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-              />
-            </div>
+      
+      <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="bg-white p-8 sm:p-10 rounded-2xl shadow-xl w-full max-w-md border border-gray-100 relative overflow-hidden">
             
-            <button 
-                disabled={loading}
-                className="w-full bg-[#FF5E4D] text-white py-2.5 rounded font-bold hover:bg-orange-600 transition-colors disabled:opacity-70"
-            >
-                {loading ? "Đang xử lý..." : "Đăng ký"}
-            </button>
-          </form>
+            {/* Decoration Bar */}
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#FF5E4D] to-orange-400"></div>
 
-          <div className="mt-6 text-center text-sm text-gray-600">
-            Đã có tài khoản? <Link href="/login" className="text-[#FF5E4D] font-medium hover:underline">Đăng nhập</Link>
-          </div>
+            {/* Title Section */}
+            <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-orange-50 mb-4">
+                    <UserPlus className="w-6 h-6 text-[#FF5E4D]" />
+                </div>
+                <h1 className="text-2xl font-bold text-gray-900">Tạo tài khoản mới</h1>
+                <p className="text-sm text-gray-500 mt-2">Nhập thông tin để bắt đầu hành trình mua sắm</p>
+            </div>
+          
+            <form onSubmit={handleSubmit} className="space-y-5">
+                
+                {/* Username Input */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên hiển thị</label>
+                    <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <User className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input 
+                            type="text" 
+                            required
+                            placeholder="Ví dụ: NguyenVanA"
+                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:border-[#FF5E4D] focus:ring-1 focus:ring-[#FF5E4D] transition-all text-gray-900 placeholder-gray-400"
+                            value={formData.username}
+                            onChange={(e) => setFormData({...formData, username: e.target.value})}
+                        />
+                    </div>
+                </div>
+
+                {/* Email Input */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+                    <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Mail className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input 
+                            type="email" 
+                            required
+                            placeholder="name@example.com"
+                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:border-[#FF5E4D] focus:ring-1 focus:ring-[#FF5E4D] transition-all text-gray-900 placeholder-gray-400"
+                            value={formData.email}
+                            onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        />
+                    </div>
+                </div>
+
+                {/* Password Input */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Mật khẩu</label>
+                    <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Lock className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input 
+                            type={showPassword ? "text" : "password"} 
+                            required
+                            placeholder="Tối thiểu 6 ký tự"
+                            className="w-full pl-10 pr-12 py-2.5 border border-gray-300 rounded-lg outline-none focus:border-[#FF5E4D] focus:ring-1 focus:ring-[#FF5E4D] transition-all text-gray-900 placeholder-gray-400"
+                            value={formData.password}
+                            onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none"
+                        >
+                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                    </div>
+                    {/* Password Hint (Optional) */}
+                    <p className="mt-1 text-xs text-gray-500">Mật khẩu nên bao gồm chữ và số.</p>
+                </div>
+            
+                {/* Submit Button */}
+                <button 
+                    disabled={loading}
+                    className={`
+                        w-full flex items-center justify-center py-3 rounded-lg font-bold text-white shadow-md transition-all
+                        ${loading 
+                            ? 'bg-orange-300 cursor-wait' 
+                            : 'bg-[#FF5E4D] hover:bg-orange-600 hover:shadow-lg transform active:scale-[0.98]'
+                        }
+                    `}
+                >
+                    {loading ? (
+                        <>
+                            <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
+                            Đang tạo tài khoản...
+                        </>
+                    ) : (
+                        <>
+                            Đăng ký ngay <ArrowRight className="ml-2 h-5 w-5" />
+                        </>
+                    )}
+                </button>
+            </form>
+
+            {/* Footer Links */}
+            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+                <p className="text-sm text-gray-600">
+                    Đã có tài khoản?{' '}
+                    <Link href="/login" className="font-semibold text-[#FF5E4D] hover:text-orange-600 transition-colors">
+                        Đăng nhập
+                    </Link>
+                </p>
+            </div>
         </div>
       </div>
+      
       <Footer />
+
+      <ToastNotification 
+        isOpen={toastState.isOpen}
+        type={toastState.type}
+        title={toastState.title}
+        message={toastState.message}
+        onClose={handleCloseToast}
+      />
     </main>
   );
 }

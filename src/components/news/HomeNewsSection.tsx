@@ -82,7 +82,7 @@ export default async function HomeNewsSection() {
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                     unoptimized={true} 
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent flex flex-col justify-center p-8 text-white">
+                <div className="absolute inset-0 bg-linear-to-r from-black/70 to-transparent flex flex-col justify-center p-8 text-white">
                     <span className="bg-white text-black text-[10px] font-extrabold px-2 py-1 w-fit mb-3 uppercase tracking-wider">
                         {STATIC_BANNER.subTitle}
                     </span>

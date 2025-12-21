@@ -12,7 +12,7 @@ export default function NewsCard({ data }: NewsCardProps) {
   return (
     <Link href={`/blog/${data.slug}`} className="group flex gap-4 cursor-pointer items-start">
       {/* Ảnh Thumbnail bên trái */}
-      <div className="relative w-1/3 aspect-[4/3] rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
+      <div className="relative w-1/3 aspect-4/3 rounded-xl overflow-hidden shrink-0 border border-gray-100">
         <Image
           src={data.coverImage}
           alt={data.title}

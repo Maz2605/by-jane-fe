@@ -1,10 +1,14 @@
 import qs from "qs";
 
 // 1. Cấu hình URL
-// Tự động cắt bỏ dấu / ở cuối nếu có để tránh lỗi //api
 const API_URL = (process.env.NEXT_PUBLIC_STRAPI_API_URL || "http://localhost:1337").replace(/\/$/, "");
-
 export const STRAPI_URL = API_URL;
+
+// --- 🔥 UPDATE 1: Định nghĩa Interface mới mở rộng từ RequestInit ---
+// Interface này cho phép TypeScript hiểu rằng options có thể chứa 'params'
+interface FetchAPIOptions extends RequestInit {
+  params?: Record<string, any>; // Object params tùy ý (filters, populate, sort...)
+}
 
 // 2. Hàm xử lý link ảnh
 export function getStrapiMedia(url: string | null) {
@@ -14,15 +18,30 @@ export function getStrapiMedia(url: string | null) {
 }
 
 // 3. Hàm gọi API (Core Function)
-export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
+export async function fetchAPI(endpoint: string, options: FetchAPIOptions = {}) {
+  // --- 🔥 UPDATE 2: Tách 'params' ra khỏi các options khác ---
+  // params: để xử lý query string
+  // restOptions: các options chuẩn của fetch (method, headers, body...)
+  const { params, ...restOptions } = options;
+
   // Đảm bảo endpoint luôn bắt đầu bằng dấu /
   const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
   
-  const url = `${STRAPI_URL}/api${path}`;
+  // Khởi tạo URL cơ bản
+  let url = `${STRAPI_URL}/api${path}`;
 
-  // Merge options mặc định với options truyền vào
+  // --- 🔥 UPDATE 3: Xử lý Query String bằng qs ---
+  if (params) {
+    const queryString = qs.stringify(params, {
+      encodeValuesOnly: true, // Giữ URL gọn gàng, dễ đọc hơn với Strapi
+    });
+    // Kiểm tra nếu endpoint đã có ? thì dùng & để nối, ngược lại dùng ?
+    url += url.includes("?") ? `&${queryString}` : `?${queryString}`;
+  }
+
+  // Merge options mặc định
   const defaultOptions: RequestInit = {
-    cache: "no-store", // Luôn lấy dữ liệu mới nhất
+    cache: "no-store", // SSR/Next.js: Luôn lấy data mới nhất
     headers: {
       "Content-Type": "application/json",
     },
@@ -30,25 +49,22 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
 
   const mergedOptions = {
     ...defaultOptions,
-    ...options, // Options từ bên ngoài (method, body) sẽ ghi đè vào đây
+    ...restOptions, // Chỉ merge các options chuẩn (không chứa params nữa)
     headers: {
       ...defaultOptions.headers,
-      ...options.headers,
+      ...restOptions.headers,
     },
   };
 
-  // LOG: In ra để kiểm tra xem đang gửi lệnh gì
+  // LOG: In ra để kiểm tra
   console.log(`📡 [${mergedOptions.method || 'GET'}] Calling API: ${url}`);
 
   try {
     const res = await fetch(url, mergedOptions);
 
     if (!res.ok) {
-      // Nếu lỗi, cố gắng đọc nội dung lỗi từ Server trả về
       const errorData = await res.json().catch(() => ({})); 
       console.error(`❌ API Error (${res.status}):`, JSON.stringify(errorData, null, 2));
-      
-      // Ném lỗi ra để bên ngoài bắt được
       throw new Error(errorData?.error?.message || `Failed to fetch API: ${res.status}`);
     }
 

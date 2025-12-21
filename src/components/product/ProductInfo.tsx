@@ -117,21 +117,49 @@ export default function ProductInfo({ product }: { product: Product }) {
           source.start(0);
 
           // 3. HIỆN TOAST NGAY KHI ÂM THANH BẮT ĐẦU
-          toast.success(
-            <div className="flex flex-col">
-              <span className="font-bold">Đã thêm vào giỏ hàng!</span>
-              <span className="text-xs opacity-90">{product.name} - {selectedColor}</span>
-            </div>, 
-            {
-              duration: 3000,
-              style: {
-                borderRadius: '12px',
-                background: 'border-gray-100',
-                color: 'text-gray-900',
-              },
-              icon: '🛍️', // Icon tùy chỉnh cho đẹp
-            }
-          );
+          toast((t) => (
+          <div className="flex flex-col gap-2 min-w-[250px]">
+            {/* Phần nội dung */}
+            <div className="flex items-center gap-3">
+              <div className="text-green-500 text-xl">✓</div>
+              <div className="flex flex-col">
+                <span className="font-bold text-gray-800">Đã thêm vào giỏ!</span>
+                <span className="text-xs text-gray-500">{product.name} - {selectedColor}</span>
+              </div>
+            </div>
+
+            {/* Phần Nút bấm (Yes / No) */}
+            <div className="flex gap-2 mt-2 pt-2 border-t border-gray-100">
+              {/* Nút NO: Chỉ tắt thông báo */}
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+              >
+                Ở lại
+              </button>
+
+              {/* Nút YES: Chuyển trang checkout */}
+              <button
+                onClick={() => {
+                  toast.dismiss(t.id); // Tắt thông báo
+                  router.push('/checkout'); // Chuyển trang (hoặc /cart)
+                }}
+                className="flex-1 px-3 py-1.5 text-xs font-medium bg-[#FF5E4D] text-white rounded hover:bg-orange-600 transition-colors"
+              >
+                Thanh toán
+              </button>
+            </div>
+          </div>
+        ), {
+          duration: 5000, // Để lâu hơn chút (5s) cho user kịp bấm
+          position: 'top-center',
+          style: {
+            background: '#fff',
+            padding: '12px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          },
+        });
         })
         .catch(e => {
           console.error("Audio error:", e);

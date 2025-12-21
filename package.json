@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@strapi/blocks-react-renderer": "^1.0.2",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.23.26",
     "lucide-react": "^0.554.0",
     "next": "^16.1.0",
     "qs": "^6.14.0",
@@ -18,6 +20,7 @@
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
     "swiper": "^12.0.3",
+    "tailwind-merge": "^3.4.0",
     "zustand": "^5.0.9"
   },
   "devDependencies": {
