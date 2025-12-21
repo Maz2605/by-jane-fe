@@ -25,7 +25,7 @@ const STATIC_BANNER = {
   id: 99,
   title: "BỘ SƯU TẬP THU ĐÔNG 2025",
   subTitle: "SẮP RA MẮT",
-  coverImage: "/images/banners/banner.png",
+  coverImage: "/images/products/banner_article.jpg",
   link: "/blog", // Tạm thời link về blog
 };
 
