@@ -1,79 +1,99 @@
-import { fetchAPI } from "./base"; // Hoặc đường dẫn import fetch của bạn
+import { fetchAPI } from "./base"; 
 
-// Định nghĩa Interface để code gợi ý chuẩn xác
-interface CartItem {
-  id: number;           // ID số (VD: 7)
-  documentId?: string;  // ID chuỗi của v5 (VD: "j8x...", nếu có thì tốt)
+// --- 1. DEFINITIONS ---
+
+export interface CartItem {
+  id: number;           
+  uniqueId?: string;    
+  documentId?: string;  
   name: string;
   price: number;
-  quantity: number;     // Số lượng khách chọn mua
+  quantity: number;
   variant: {
     size: string;
     color: string;
   };
 }
 
-interface OrderData {
+export interface CreateOrderInput {
   customerName: string;
   customerPhone: string;
   customerEmail: string;
   shippingAddress: string;
   note: string;
-  totalAmount: number;
   items: CartItem[];
+  subTotal: number;       
+  discountAmount: number; 
+  totalAmount: number;    
+  voucherCode?: string;   
+  paymentMethod?: string; 
 }
 
-export async function createOrder(orderData: OrderData) {
-  console.log("🚀 [FE] Đang chuẩn bị gửi đơn hàng...", orderData);
+// --- 2. MAIN FUNCTION ---
 
-  // 1. Map dữ liệu từ Giỏ hàng sang format API Custom
+export async function createOrder(orderData: CreateOrderInput) {
+  
+  // A. Map dữ liệu Items
   const simplifiedItems = orderData.items.map((item) => ({
-    // Gửi ID định danh sản phẩm (Ưu tiên documentId nếu có)
-    productId: item.id,       
-    documentId: item.documentId, 
-
-    // 🔥 QUAN TRỌNG: Map số lượng mua (quantity) vào field tên là 'stock'
-    // Lý do: Backend của bạn đang định nghĩa field số lượng mua là 'stock'
-    stock: item.quantity,      
-    
-    // Các thông tin biến thể
+    product: item.id,      
+    productId: item.id,    
+    documentId: item.documentId,
+    stock: item.quantity, 
+    quantity: item.quantity, 
     size: item.variant.size,
     color: item.variant.color,
-    
-    // Snapshot thông tin lúc mua (để lưu vào lịch sử đơn)
-    name: item.name,          
-    price: item.price         
+    name: item.name,
+    price: item.price,
   }));
 
-  // 2. Chuẩn bị Payload sạch sẽ
+  // B. Chuẩn bị Payload
   const payload = {
-    data: {
-      customerName: orderData.customerName,
-      customerPhone: orderData.customerPhone,
-      customerEmail: orderData.customerEmail,
-      shippingAddress: orderData.shippingAddress,
-      note: orderData.note,
-      totalAmount: orderData.totalAmount,
-      
-      // Mảng items đã map ở trên
-      items: simplifiedItems, 
-    },
+    customerName: orderData.customerName,
+    customerPhone: orderData.customerPhone,
+    customerEmail: orderData.customerEmail,
+    shippingAddress: orderData.shippingAddress,
+    note: orderData.note,
+    items: simplifiedItems,
+    subTotal: orderData.subTotal,
+    discountAmount: orderData.discountAmount,
+    totalAmount: orderData.totalAmount,
+    voucherCode: orderData.voucherCode || null, 
+    paymentMethod: orderData.paymentMethod || 'cod',
   };
 
-  // 3. Gọi API Custom Controller (Không gọi API mặc định của Strapi)
+  // 🔥 C. LẤY TOKEN (Key thường là 'authToken', 'token' hoặc 'jwt' tùy project bạn)
+  // Hãy chắc chắn bạn đang lưu token với key là 'authToken'. 
+  // Nếu bạn dùng tên khác (ví dụ 'jwt'), hãy sửa lại dòng dưới đây.
+  let token = null;
+  if (typeof window !== 'undefined') {
+      // 👇 SỬA Ở ĐÂY: Thêm tất cả các trường hợp có thể xảy ra để "bắt dính" token
+      token = localStorage.getItem('authToken') || 
+              localStorage.getItem('jwt') || 
+              localStorage.getItem('token') || 
+              localStorage.getItem('strapi_jwt');
+  }
+  console.log("🔑 Token tìm thấy ở Frontend:", token);
+
+  // D. Chuẩn bị Header Auth
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  // E. Gọi API
   try {
     const response = await fetchAPI("/orders/place-order", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: headers, // Gửi header có chứa token
       body: JSON.stringify(payload),
     });
 
     return response;
   } catch (error) {
-    console.error("❌ [FE] Lỗi khi gọi API đặt hàng:", error);
+    console.error("❌ [Service] Lỗi call API createOrder:", error);
     throw error;
   }
 }
-

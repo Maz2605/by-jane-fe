@@ -2,13 +2,18 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Ticket, X, Loader2, ChevronRight } from "lucide-react"; // Đảm bảo đã cài: npm install lucide-react
+import { Ticket, X, Loader2, ChevronRight } from "lucide-react";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
 import { useCartStore } from "@/store/useCartStore";
+
+// --- SERVICES ---
 import { createOrder } from "@/services/order";
-// Import service voucher đã sửa ở bước trước
 import { validateVoucher, getActiveVouchers, Voucher } from "@/services/voucher";
+
+// --- COMPONENTS ---
+// 👇 Đảm bảo bạn đã tạo file này theo hướng dẫn ở bước trước
+import OrderProcessingOverlay from "@/components/checkout/OrderProcessingOverlay";
 
 interface CheckoutFormData {
   name: string;
@@ -24,6 +29,8 @@ export default function CheckoutPage() {
   // --- 1. STORE & STATE ---
   const { items, removeFromCart, selectedCheckoutIds } = useCartStore();
   const [isMounted, setIsMounted] = useState(false);
+  
+  // Loading state này sẽ kích hoạt Overlay
   const [loading, setLoading] = useState(false);
   
   // Form Data
@@ -57,17 +64,13 @@ export default function CheckoutPage() {
   const discountAmount = useMemo(() => {
     if (!appliedVoucher) return 0;
     
-    // 🛡️ Safety Check: Đảm bảo value luôn là số
     const val = appliedVoucher.value || 0; 
-
     let discount = 0;
     if (appliedVoucher.type === "percent") {
       discount = subTotal * (val / 100);
     } else {
       discount = val;
     }
-
-    // Không giảm quá số tiền đơn hàng
     return discount > subTotal ? subTotal : discount;
   }, [appliedVoucher, subTotal]);
 
@@ -75,23 +78,27 @@ export default function CheckoutPage() {
 
   // --- 3. EFFECTS ---
   useEffect(() => setIsMounted(true), []);
+  
+  useEffect(() => {
+    router.prefetch("/checkout/success");
+  }, [router])
 
-  // Redirect nếu không có item (trừ khi success)
+  // Redirect nếu không có item
   useEffect(() => {
     if (isMounted && checkoutItems.length === 0 && !isSuccessRef.current) {
       router.push("/cart");
     }
   }, [isMounted, checkoutItems, router]);
 
-  // Auto remove voucher nếu không đủ điều kiện min order
+  // Auto remove voucher
   useEffect(() => {
     if (appliedVoucher?.minOrderValue && subTotal < appliedVoucher.minOrderValue) {
         setAppliedVoucher(null);
-        setVoucherError(`Mã ${appliedVoucher.code} đã bị hủy do đơn hàng chưa đủ ${appliedVoucher.minOrderValue.toLocaleString('vi-VN')}đ`);
+        setVoucherError(`Mã ${appliedVoucher.code} đã hủy do đơn chưa đủ ${appliedVoucher.minOrderValue.toLocaleString('vi-VN')}đ`);
     }
   }, [subTotal, appliedVoucher]);
 
-  // Load danh sách voucher khi mở Modal
+  // Load danh sách voucher
   useEffect(() => {
     if (isModalOpen && availableVouchers.length === 0) {
         setIsLoadingList(true);
@@ -117,8 +124,8 @@ export default function CheckoutPage() {
     try {
         const voucher = await validateVoucher(codeToUse, subTotal);
         setAppliedVoucher(voucher);
-        setVoucherCode(""); // Clear input
-        setIsModalOpen(false); // Đóng modal nếu đang mở
+        setVoucherCode(""); 
+        setIsModalOpen(false); 
     } catch (error: any) {
         setVoucherError(error.message || "Mã không hợp lệ");
         setAppliedVoucher(null);
@@ -130,6 +137,8 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (checkoutItems.length === 0) return;
+    
+    // 🔥 Kích hoạt Animation Overlay
     setLoading(true);
 
     try {
@@ -138,26 +147,46 @@ export default function CheckoutPage() {
         customerPhone: formData.phone,
         customerEmail: formData.email,
         shippingAddress: formData.address,
-        note: formData.note, // Đảm bảo Strapi có field 'note'
+        note: formData.note,
         items: checkoutItems,
+        
+        // Tài chính & Voucher
+        subTotal: subTotal,
+        discountAmount: discountAmount,
         totalAmount: finalTotal,
+        voucherCode: appliedVoucher ? appliedVoucher.code : undefined,
+        paymentMethod: "cod" 
       });
 
       isSuccessRef.current = true;
+      
+      // Xóa cart
       checkoutItems.forEach(item => removeFromCart(item.uniqueId));
+      
+      // Redirect sang trang Success (Giữ nguyên trang riêng như đã bàn)
       router.push("/checkout/success");
 
     } catch (error: any) {
-      alert(error.message || "Lỗi đặt hàng");
-    } finally {
-      if (!isSuccessRef.current) setLoading(false);
+      console.error("Lỗi đặt hàng:", error);
+      const message = error.response?.data?.error?.message || error.message || "Có lỗi xảy ra.";
+      
+      // Tắt loading để user thấy thông báo lỗi và sửa lại
+      setLoading(false);
+      alert(message); 
     }
+    // Lưu ý: Không để setLoading(false) ở finally chung, 
+    // vì nếu success thì mình muốn giữ loading state cho đến khi redirect xong để tránh flickr.
   };
 
   if (!isMounted || (checkoutItems.length === 0 && !isSuccessRef.current)) return null;
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col relative">
+      
+      {/* 👇 COMPONENT ANIMATION SINH ĐỘNG NẰM Ở ĐÂY */}
+      {/* Nó sẽ phủ lên toàn bộ màn hình khi loading = true */}
+      <OrderProcessingOverlay isLoading={loading} />
+
       <Header />
       
       <div className="container mx-auto px-4 md:px-10 py-8 grow">
@@ -169,11 +198,11 @@ export default function CheckoutPage() {
             <div className="w-full lg:w-2/3 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
                 <h2 className="text-lg font-bold mb-5 flex items-center gap-2 border-b pb-2">📍 Thông tin giao hàng</h2>
                 <div className="space-y-4">
-                     <input required name="name" onChange={handleChange} className="w-full border rounded px-3 py-2 outline-none focus:ring-1 focus:ring-orange-500" placeholder="Họ tên *" />
-                     <input required name="phone" onChange={handleChange} className="w-full border rounded px-3 py-2 outline-none focus:ring-1 focus:ring-orange-500" placeholder="Số điện thoại *" />
-                     <input required name="email" onChange={handleChange} className="w-full border rounded px-3 py-2 outline-none focus:ring-1 focus:ring-orange-500" placeholder="Email *" />
-                     <input required name="address" onChange={handleChange} className="w-full border rounded px-3 py-2 outline-none focus:ring-1 focus:ring-orange-500" placeholder="Địa chỉ *" />
-                     <textarea name="note" onChange={handleChange} className="w-full border rounded px-3 py-2 h-24 outline-none focus:ring-1 focus:ring-orange-500" placeholder="Ghi chú (Giao giờ hành chính...)" />
+                      <input required name="name" onChange={handleChange} className="w-full border rounded px-3 py-2 outline-none focus:ring-1 focus:ring-orange-500" placeholder="Họ tên *" />
+                      <input required name="phone" onChange={handleChange} className="w-full border rounded px-3 py-2 outline-none focus:ring-1 focus:ring-orange-500" placeholder="Số điện thoại *" />
+                      <input required name="email" onChange={handleChange} className="w-full border rounded px-3 py-2 outline-none focus:ring-1 focus:ring-orange-500" placeholder="Email *" />
+                      <input required name="address" onChange={handleChange} className="w-full border rounded px-3 py-2 outline-none focus:ring-1 focus:ring-orange-500" placeholder="Địa chỉ *" />
+                      <textarea name="note" onChange={handleChange} className="w-full border rounded px-3 py-2 h-24 outline-none focus:ring-1 focus:ring-orange-500" placeholder="Ghi chú (Giao giờ hành chính...)" />
                 </div>
             </div>
 
@@ -193,7 +222,7 @@ export default function CheckoutPage() {
                         ))}
                     </div>
 
-                    {/* --- KHU VỰC VOUCHER --- */}
+                    {/* Khu vực Voucher */}
                     <div className="pt-2">
                         <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                             <Ticket size={16} className="text-orange-500"/> Mã ưu đãi
@@ -222,7 +251,6 @@ export default function CheckoutPage() {
                                     <span className="font-bold text-green-700 flex items-center gap-1 text-sm">
                                         <Ticket size={14}/> {appliedVoucher.code}
                                     </span>
-                                    {/* 👇 FIX LỖI CRASH Ở ĐÂY: Thêm || 0 */}
                                     <span className="text-xs text-green-600 block mt-0.5">
                                         {appliedVoucher.type === 'percent' 
                                             ? `Giảm ${appliedVoucher.value || 0}%` 
@@ -266,15 +294,16 @@ export default function CheckoutPage() {
                         </div>
                     </div>
 
+                    {/* Nút Submit - Text đơn giản vì đã có Overlay xử lý UI */}
                     <button type="submit" disabled={loading} className="w-full bg-[#FF5E4D] text-white py-3.5 rounded-lg font-bold mt-6 hover:bg-[#e04f3f] disabled:bg-gray-300 transition-all shadow-md">
-                        {loading ? "ĐANG XỬ LÝ..." : "ĐẶT HÀNG NGAY"}
+                        ĐẶT HÀNG NGAY
                     </button>
                 </div>
             </div>
         </form>
       </div>
 
-      {/* --- 👇 MODAL LIST VOUCHER --- */}
+      {/* --- MODAL LIST VOUCHER --- */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden">
@@ -290,13 +319,11 @@ export default function CheckoutPage() {
                         <div className="text-center py-10 text-gray-500">Chưa có mã giảm giá nào.</div>
                     ) : (
                         availableVouchers.map((v) => {
-                            // Check điều kiện
                             const isEligible = subTotal >= v.minOrderValue;
                             const val = v.value || 0;
 
                             return (
                                 <div key={v.id} className={`bg-white border rounded-lg p-3 flex gap-3 transition-all relative overflow-hidden ${!isEligible ? 'opacity-60 grayscale' : 'hover:border-orange-400 shadow-sm'}`}>
-                                    {/* Left Decoration */}
                                     <div className="w-20 bg-orange-50 border-r border-dashed border-gray-200 flex flex-col items-center justify-center rounded-l-lg -my-3 -ml-3 py-3">
                                         <span className="text-orange-600 font-black text-lg">
                                             {v.type === 'percent' ? `${val}%` : '🎁'}
@@ -304,7 +331,6 @@ export default function CheckoutPage() {
                                         <span className="text-[10px] text-orange-400 uppercase font-bold mt-1">{v.type}</span>
                                     </div>
                                     
-                                    {/* Content */}
                                     <div className="flex-1 min-w-0 py-1">
                                         <p className="font-bold text-gray-800 text-base">{v.code}</p>
                                         <p className="text-xs text-gray-500 mt-1">
@@ -324,7 +350,6 @@ export default function CheckoutPage() {
                                         )}
                                     </div>
 
-                                    {/* Button */}
                                     <div className="flex items-center">
                                         <button
                                             type="button"
