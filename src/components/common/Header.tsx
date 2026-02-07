@@ -4,18 +4,19 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Search, Heart, User, ShoppingBag, ChevronDown } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
-import { useEffect, useState, Suspense } from 'react'; // Thêm Suspense
-import { useAuthStore } from '@/store/useAuthStore';
+import { useEffect, useState, Suspense } from 'react';
+import { useSession } from 'next-auth/react';
 import { getCategories } from '@/services/category';
+import { getStrapiMedia } from '@/services/base';
 
 // 1. Thêm hooks điều hướng của Next.js
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Category {
-  id: number;
-  name: string;
-  slug: string;
-  img: string;
+    id: number;
+    name: string;
+    slug: string;
+    img: string;
 }
 
 // Tách SearchBar ra component con hoặc bọc cả Header trong Suspense 
@@ -23,7 +24,7 @@ interface Category {
 function SearchBar() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    
+
     // State lưu từ khóa tìm kiếm
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -39,7 +40,7 @@ function SearchBar() {
     const handleSearch = () => {
         // 1. Trim khoảng trắng thừa
         const trimmedQuery = searchQuery.trim();
-        
+
         // 2. Nếu ô tìm kiếm rỗng, không làm gì (hoặc có thể redirect về trang products gốc)
         if (!trimmedQuery) return;
 
@@ -65,7 +66,7 @@ function SearchBar() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
             />
-            <button 
+            <button
                 onClick={handleSearch}
                 className="absolute right-1 top-1/2 -translate-y-1/2 bg-[#FF5E4D] text-white p-2 rounded-full hover:bg-orange-600 transition-colors shadow-md"
             >
@@ -76,7 +77,7 @@ function SearchBar() {
 }
 
 export default function Header() {
-    const { user, isLoggedIn } = useAuthStore();
+    const { data: session, status } = useSession();
     const totalItems = useCartStore((state) => state.totalItems());
     const [isMounted, setIsMounted] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
@@ -105,7 +106,7 @@ export default function Header() {
         <header className="w-full font-sans shadow-sm bg-white sticky top-0 z-50">
             <div className="container mx-auto px-4 md:px-10">
                 <div className="flex items-center justify-between py-6 gap-4 md:gap-8">
-                    
+
                     {/* Logo */}
                     <Link href="/" className="shrink-0">
                         <Image
@@ -130,14 +131,25 @@ export default function Header() {
                             <span className="text-[10px] md:text-xs font-medium">Yêu thích</span>
                         </Link> */}
 
-                        {isMounted && isLoggedIn ? (
+                        {isMounted && session?.user ? (
                             <Link href="/profile" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] transition-colors group">
-                                <User size={20} strokeWidth={1.5} className="group-hover:scale-110 transition-transform"/>
-                                <span className="text-[10px] md:text-xs font-medium truncate max-w-20">{user?.username}</span>
+                                <div className="w-5 h-5 rounded-full overflow-hidden border border-gray-200 group-hover:border-[#FF5E4D] transition-colors relative">
+                                    {(session.user as any).avatar ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img
+                                            src={getStrapiMedia((session.user as any).avatar.url) || undefined}
+                                            alt="Avatar"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <User size={20} strokeWidth={1.5} className="group-hover:scale-110 transition-transform w-full h-full p-0.5" />
+                                    )}
+                                </div>
+                                <span className="text-[10px] md:text-xs font-medium truncate max-w-20">{session.user.name}</span>
                             </Link>
                         ) : (
                             <Link href="/login" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] transition-colors group">
-                                <User size={20} strokeWidth={1.5} className="group-hover:scale-110 transition-transform"/>
+                                <User size={20} strokeWidth={1.5} className="group-hover:scale-110 transition-transform" />
                                 <span className="text-[10px] md:text-xs font-medium">Tài khoản</span>
                             </Link>
                         )}
@@ -161,10 +173,10 @@ export default function Header() {
                     <ul className="flex items-center gap-6 md:gap-8 text-sm font-semibold text-gray-700">
                         <li><Link href="/" className="hover:text-[#FF5E4D] transition-colors">Trang chủ</Link></li>
                         <li><Link href="/products" className="hover:text-[#FF5E4D] transition-colors">Sản phẩm</Link></li>
-                        
-                        <li className="group relative py-2"> 
+
+                        <li className="group relative py-2">
                             <Link href="" className="flex items-center gap-1 hover:text-[#FF5E4D] transition-colors cursor-pointer">
-                                Danh mục sản phẩm <ChevronDown size={16} className="group-hover:rotate-180 transition-transform duration-300"/>
+                                Danh mục sản phẩm <ChevronDown size={16} className="group-hover:rotate-180 transition-transform duration-300" />
                             </Link>
                             <div className="absolute top-full left-0 pt-2 w-[280px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-in-out z-50 transform translate-y-4 group-hover:translate-y-0">
                                 <div className="bg-white shadow-xl rounded-lg border border-gray-100 overflow-hidden">

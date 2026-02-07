@@ -1,31 +1,20 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { 
-  User, Mail, Lock, Eye, EyeOff, Loader2, UserPlus, ArrowRight 
-} from "lucide-react"; // Import icon mới: UserPlus
+import { signIn } from "next-auth/react";
+import {
+  User, Mail, Lock, Eye, EyeOff, Loader2, UserPlus, ArrowRight
+} from "lucide-react";
 
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
 import { register } from "@/services/auth";
-import { useAuthStore } from "@/store/useAuthStore";
 import ToastNotification from "@/components/ui/ToastNotification";
 
 export default function RegisterPage() {
   const router = useRouter();
-
-  // ✅ FIX ZUSTAND SELECTOR (Tách lẻ để tránh infinite loop)
-  const setAuth = useAuthStore((state) => state.setAuth);
-  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
-
-  // --- GUARD LOGIC ---
-  useLayoutEffect(() => {
-    if (isLoggedIn) {
-      router.replace("/");
-    }
-  }, [isLoggedIn, router]);
 
   // --- STATE ---
   const [formData, setFormData] = useState({ username: "", email: "", password: "" });
@@ -58,11 +47,11 @@ export default function RegisterPage() {
     handleCloseToast();
 
     try {
-      // 1. Gọi API Register
+      // 1. Register user with Strapi
       const res = await register(formData.username, formData.email, formData.password);
-      
+
       if (res.jwt) {
-        // 2. Thành công -> Hiện Toast trước
+        // 2. Show success toast
         setToastState({
           isOpen: true,
           type: 'success',
@@ -70,15 +59,21 @@ export default function RegisterPage() {
           message: `Chào mừng ${res.user.username} gia nhập hệ thống!`,
         });
 
-        // 3. Delay 1 giây để user tận hưởng niềm vui rồi mới redirect
-        setTimeout(() => {
-          setAuth(res.user, res.jwt); // Lưu vào store
-          router.replace("/");        // Chuyển trang
-          router.refresh();           // Refresh header
+        // 3. Wait for toast, then auto-login using NextAuth
+        setTimeout(async () => {
+          const result = await signIn("credentials", {
+            redirect: false,
+            email: formData.email,
+            password: formData.password,
+          });
+
+          if (result?.ok) {
+            router.replace("/");
+            router.refresh();
+          }
         }, 1000);
 
       } else {
-        // Xử lý lỗi từ Strapi trả về (thường nằm trong res.error)
         const errorMsg = res.error?.message || "Đăng ký thất bại. Vui lòng thử lại.";
         throw new Error(errorMsg);
       }
@@ -97,126 +92,126 @@ export default function RegisterPage() {
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <Header />
-      
+
       <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="bg-white p-8 sm:p-10 rounded-2xl shadow-xl w-full max-w-md border border-gray-100 relative overflow-hidden">
-            
-            {/* Decoration Bar */}
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#FF5E4D] to-orange-400"></div>
 
-            {/* Title Section */}
-            <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-orange-50 mb-4">
-                    <UserPlus className="w-6 h-6 text-[#FF5E4D]" />
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900">Tạo tài khoản mới</h1>
-                <p className="text-sm text-gray-500 mt-2">Nhập thông tin để bắt đầu hành trình mua sắm</p>
+          {/* Decoration Bar */}
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#FF5E4D] to-orange-400"></div>
+
+          {/* Title Section */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-orange-50 mb-4">
+              <UserPlus className="w-6 h-6 text-[#FF5E4D]" />
             </div>
-          
-            <form onSubmit={handleSubmit} className="space-y-5">
-                
-                {/* Username Input */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên hiển thị</label>
-                    <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <User className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input 
-                            type="text" 
-                            required
-                            placeholder="Ví dụ: NguyenVanA"
-                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:border-[#FF5E4D] focus:ring-1 focus:ring-[#FF5E4D] transition-all text-gray-900 placeholder-gray-400"
-                            value={formData.username}
-                            onChange={(e) => setFormData({...formData, username: e.target.value})}
-                        />
-                    </div>
-                </div>
+            <h1 className="text-2xl font-bold text-gray-900">Tạo tài khoản mới</h1>
+            <p className="text-sm text-gray-500 mt-2">Nhập thông tin để bắt đầu hành trình mua sắm</p>
+          </div>
 
-                {/* Email Input */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-                    <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Mail className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input 
-                            type="email" 
-                            required
-                            placeholder="name@example.com"
-                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:border-[#FF5E4D] focus:ring-1 focus:ring-[#FF5E4D] transition-all text-gray-900 placeholder-gray-400"
-                            value={formData.email}
-                            onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        />
-                    </div>
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-5">
 
-                {/* Password Input */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Mật khẩu</label>
-                    <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Lock className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input 
-                            type={showPassword ? "text" : "password"} 
-                            required
-                            placeholder="Tối thiểu 6 ký tự"
-                            className="w-full pl-10 pr-12 py-2.5 border border-gray-300 rounded-lg outline-none focus:border-[#FF5E4D] focus:ring-1 focus:ring-[#FF5E4D] transition-all text-gray-900 placeholder-gray-400"
-                            value={formData.password}
-                            onChange={(e) => setFormData({...formData, password: e.target.value})}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none"
-                        >
-                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                        </button>
-                    </div>
-                    {/* Password Hint (Optional) */}
-                    <p className="mt-1 text-xs text-gray-500">Mật khẩu nên bao gồm chữ và số.</p>
+            {/* Username Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Tên hiển thị</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
                 </div>
-            
-                {/* Submit Button */}
-                <button 
-                    disabled={loading}
-                    className={`
-                        w-full flex items-center justify-center py-3 rounded-lg font-bold text-white shadow-md transition-all
-                        ${loading 
-                            ? 'bg-orange-300 cursor-wait' 
-                            : 'bg-[#FF5E4D] hover:bg-orange-600 hover:shadow-lg transform active:scale-[0.98]'
-                        }
-                    `}
+                <input
+                  type="text"
+                  required
+                  placeholder="Ví dụ: NguyenVanA"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:border-[#FF5E4D] focus:ring-1 focus:ring-[#FF5E4D] transition-all text-gray-900 placeholder-gray-400"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* Email Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="email"
+                  required
+                  placeholder="name@example.com"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:border-[#FF5E4D] focus:ring-1 focus:ring-[#FF5E4D] transition-all text-gray-900 placeholder-gray-400"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* Password Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Mật khẩu</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  placeholder="Tối thiểu 6 ký tự"
+                  className="w-full pl-10 pr-12 py-2.5 border border-gray-300 rounded-lg outline-none focus:border-[#FF5E4D] focus:ring-1 focus:ring-[#FF5E4D] transition-all text-gray-900 placeholder-gray-400"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none"
                 >
-                    {loading ? (
-                        <>
-                            <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
-                            Đang tạo tài khoản...
-                        </>
-                    ) : (
-                        <>
-                            Đăng ký ngay <ArrowRight className="ml-2 h-5 w-5" />
-                        </>
-                    )}
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
-            </form>
-
-            {/* Footer Links */}
-            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-                <p className="text-sm text-gray-600">
-                    Đã có tài khoản?{' '}
-                    <Link href="/login" className="font-semibold text-[#FF5E4D] hover:text-orange-600 transition-colors">
-                        Đăng nhập
-                    </Link>
-                </p>
+              </div>
+              {/* Password Hint (Optional) */}
+              <p className="mt-1 text-xs text-gray-500">Mật khẩu nên bao gồm chữ và số.</p>
             </div>
+
+            {/* Submit Button */}
+            <button
+              disabled={loading}
+              className={`
+                        w-full flex items-center justify-center py-3 rounded-lg font-bold text-white shadow-md transition-all
+                        ${loading
+                  ? 'bg-orange-300 cursor-wait'
+                  : 'bg-[#FF5E4D] hover:bg-orange-600 hover:shadow-lg transform active:scale-[0.98]'
+                }
+                    `}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
+                  Đang tạo tài khoản...
+                </>
+              ) : (
+                <>
+                  Đăng ký ngay <ArrowRight className="ml-2 h-5 w-5" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Footer Links */}
+          <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+            <p className="text-sm text-gray-600">
+              Đã có tài khoản?{' '}
+              <Link href="/login" className="font-semibold text-[#FF5E4D] hover:text-orange-600 transition-colors">
+                Đăng nhập
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
-      
+
       <Footer />
 
-      <ToastNotification 
+      <ToastNotification
         isOpen={toastState.isOpen}
         type={toastState.type}
         title={toastState.title}

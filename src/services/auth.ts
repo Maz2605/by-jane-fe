@@ -1,21 +1,7 @@
 import { fetchAPI } from "./base";
 
-// Hàm Đăng nhập
-export async function login(identifier: any, password: any) {
-    try {
-        const data = await fetchAPI("/auth/local", {
-            method: "POST",
-            body: JSON.stringify({
-                identifier, // Strapi chấp nhận cả username hoặc email
-                password,
-            }),
-        });
-        return data;
-    } catch (error) {
-        console.error("Login Error:", error);
-        throw error;
-    }
-}
+// Hàm Đăng nhập (Đã bị loại bỏ vì dùng NextAuth)
+// export async function login(...) {}
 
 // Hàm Đăng ký
 export async function register(username: any, email: any, password: any) {
@@ -56,9 +42,9 @@ export async function updateProfile(userId: number, data: any, token: string) {
 
 // --- MỚI THÊM: Hàm Đổi mật khẩu ---
 export async function changePassword(
-    currentPassword: any, 
-    password: any, 
-    passwordConfirmation: any, 
+    currentPassword: any,
+    password: any,
+    passwordConfirmation: any,
     token: string
 ) {
     try {
