@@ -15,6 +15,7 @@ import { uploadFile } from "@/services/upload";
 import { getStrapiMedia } from "@/services/base";
 import ToastNotification from "@/components/ui/ToastNotification";
 import ImageCropper from "@/components/ui/ImageCropper";
+import LogoutButton from "@/components/common/LogoutButton";
 
 // Định nghĩa các loại Tab
 type TabType = 'info' | 'security';
@@ -261,13 +262,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleLogout = () => {
-    setToastState({ isOpen: true, type: 'warning', title: 'Đăng xuất', message: 'Hẹn gặp lại bạn!' });
-    setTimeout(async () => {
-      await signOut({ redirect: false });
-      router.push("/");
-    }, 1500);
-  };
+
 
   if (status === "loading") {
     return (
@@ -280,9 +275,7 @@ export default function ProfilePage() {
   if (!session?.user) return null;
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-20 font-sans">
-      <Header />
-
+    <div className="flex-1 bg-gray-50 pb-20 font-sans">
       {/* CROPPER MODAL */}
       {/* CROPPER MODAL */}
       {isCropping && selectedImage && (
@@ -319,7 +312,7 @@ export default function ProfilePage() {
                     {(session.user as any).avatar ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={getStrapiMedia((session.user as any).avatar.url)}
+                        src={getStrapiMedia((session.user as any).avatar.url) || ""}
                         alt="Avatar"
                         className="w-full h-full object-cover"
                       />
@@ -371,12 +364,14 @@ export default function ProfilePage() {
                   </button>
 
                   {/* LOGOUT */}
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 text-left px-6 py-3.5 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors border-t border-gray-100 mt-2"
-                  >
-                    <LogOut size={18} /> Đăng xuất
-                  </button>
+                  <div className="border-t border-gray-100 mt-2">
+                    <LogoutButton
+                      className="flex items-center gap-3 text-left px-6 py-3.5 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors w-full"
+                      iconSize={18}
+                    >
+                      Đăng xuất
+                    </LogoutButton>
+                  </div>
                 </nav>
               </div>
             </div>
@@ -543,8 +538,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <Footer />
       <ToastNotification isOpen={toastState.isOpen} type={toastState.type} title={toastState.title} message={toastState.message} onClose={handleCloseToast} />
-    </main>
+    </div>
   );
 }

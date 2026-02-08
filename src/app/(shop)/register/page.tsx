@@ -90,9 +90,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      <Header />
-
+    <div className="flex-1 flex flex-col bg-gray-50">
       <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="bg-white p-8 sm:p-10 rounded-2xl shadow-xl w-full max-w-md border border-gray-100 relative overflow-hidden">
 
@@ -209,8 +207,6 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <Footer />
-
       <ToastNotification
         isOpen={toastState.isOpen}
         type={toastState.type}
@@ -218,6 +214,6 @@ export default function RegisterPage() {
         message={toastState.message}
         onClose={handleCloseToast}
       />
-    </main>
+    </div>
   );
 }

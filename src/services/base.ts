@@ -26,7 +26,7 @@ export async function fetchAPI(endpoint: string, options: FetchAPIOptions = {}) 
 
   // Đảm bảo endpoint luôn bắt đầu bằng dấu /
   const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-  
+
   // Khởi tạo URL cơ bản
   let url = `${STRAPI_URL}/api${path}`;
 
@@ -56,14 +56,13 @@ export async function fetchAPI(endpoint: string, options: FetchAPIOptions = {}) 
     },
   };
 
-  // LOG: In ra để kiểm tra
-  console.log(`📡 [${mergedOptions.method || 'GET'}] Calling API: ${url}`);
+
 
   try {
     const res = await fetch(url, mergedOptions);
 
     if (!res.ok) {
-      const errorData = await res.json().catch(() => ({})); 
+      const errorData = await res.json().catch(() => ({}));
       console.error(`❌ API Error (${res.status}):`, JSON.stringify(errorData, null, 2));
       throw new Error(errorData?.error?.message || `Failed to fetch API: ${res.status}`);
     }

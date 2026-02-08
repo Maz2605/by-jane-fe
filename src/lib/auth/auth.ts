@@ -3,6 +3,7 @@ import Credentials from 'next-auth/providers/credentials';
 import { authConfig } from './auth.config';
 
 // Define User type that matches Strapi response
+// Define User type that matches Strapi response
 interface StrapiUser {
     id: number;
     username: string;
@@ -14,6 +15,12 @@ interface StrapiUser {
     phoneNumber?: string;
     address?: string;
     avatar?: any;
+    role?: {
+        id: number;
+        name: string;
+        description: string;
+        type: string;
+    };
     createdAt?: string;
     updatedAt?: string;
 }
@@ -52,13 +59,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     });
 
                     if (!res.ok) {
+                        const errorData = await res.json().catch(() => ({}));
+                        console.error("❌ Strapi Login Failed:", JSON.stringify(errorData, null, 2));
                         return null;
                     }
 
                     const data: StrapiAuthResponse = await res.json();
 
                     if (data.jwt && data.user) {
-                        // 🔥 FIX: Fetch full user profile (bao gồm Avatar) ngay khi login
+                        // 🔥 FIX: Fetch full user profile (bao gồm Avatar & Role) ngay khi login
                         try {
                             const meRes = await fetch(`${API_URL}/api/users/me?populate=*`, {
                                 headers: {
@@ -68,11 +77,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                             if (meRes.ok) {
                                 const fullUser = await meRes.json();
-                                // Merge data: ưu tiên dữ liệu từ /users/me (có avatar)
+                                console.log("🔥 DEBUG USER ME:", JSON.stringify(fullUser, null, 2));
+                                // Merge data: ưu tiên dữ liệu từ /users/me (có avatar & role)
                                 data.user = { ...data.user, ...fullUser };
+                            } else {
+                                console.error("❌ Failed to fetch /users/me:", meRes.status, meRes.statusText);
+                                const errText = await meRes.text();
+                                console.error("❌ Error Body:", errText);
                             }
                         } catch (fetchError) {
-                            console.error('Failed to fetch full user profile:', fetchError);
+                            console.error('❌ Exception fetching full user profile:', fetchError);
                         }
 
                         // Return user object with jwt included
@@ -86,6 +100,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             phoneNumber: data.user.phoneNumber,
                             address: data.user.address,
                             avatar: data.user.avatar,
+                            role: data.user.role, // 🔥 ADD ROLE
                         };
                     }
 
@@ -97,41 +112,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             },
         }),
     ],
-    callbacks: {
-        async jwt({ token, user, trigger, session }) {
-            // Initial sign in
-            if (user) {
-                token.strapiToken = (user as any).strapiToken;
-                token.id = user.id;
-                token.fullName = (user as any).fullName;
-                token.phoneNumber = (user as any).phoneNumber;
-                token.address = (user as any).address;
-                token.avatar = (user as any).avatar;
-            }
-
-            // Handle session update (e.g. from client-side update())
-            if (trigger === "update" && session) {
-                if (session.user?.fullName) token.fullName = session.user.fullName;
-                if (session.user?.phoneNumber) token.phoneNumber = session.user.phoneNumber;
-                if (session.user?.address) token.address = session.user.address;
-                if (session.user?.avatar) token.avatar = session.user.avatar;
-            }
-
-            return token;
-        },
-        async session({ session, token }) {
-            // Send properties to the client
-            if (token) {
-                session.user.id = token.id as string;
-                (session as any).strapiToken = token.strapiToken;
-                (session.user as any).fullName = token.fullName;
-                (session.user as any).phoneNumber = token.phoneNumber;
-                (session.user as any).address = token.address;
-                (session.user as any).avatar = token.avatar;
-            }
-            return session;
-        },
-    },
+    // Callbacks are now in auth.config.ts to support Middleware
     session: {
         strategy: 'jwt',
     },

@@ -165,6 +165,16 @@ export default function Header() {
                             </div>
                             <span className="text-[10px] md:text-xs font-medium">Giỏ hàng</span>
                         </Link>
+                        {/* Admin Dashboard Link - Only for Admins */}
+                        {isMounted && ['Admin', 'Super Admin', 'admin'].includes((session?.user as any)?.role?.name) && (
+                            <Link href="/admin" className="flex flex-col items-center gap-1 cursor-pointer hover:text-[#FF5E4D] transition-colors group">
+                                <div className="p-1 rounded-md border border-dashed border-gray-300 group-hover:border-[#FF5E4D] transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></svg>
+                                </div>
+                                <span className="text-[10px] md:text-xs font-medium">Quản trị</span>
+                            </Link>
+                        )}
+
                     </div>
                 </div>
 

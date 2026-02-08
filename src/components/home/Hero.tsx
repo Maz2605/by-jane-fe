@@ -20,7 +20,7 @@ import { Headset, PackageCheck, Truck, HandCoins, Volume2, VolumeX } from "lucid
 export interface HeroSlide {
   id: number;
   type: "image" | "video";
-  url: string;     
+  url: string;
   poster?: string;
   alt?: string;
 }
@@ -84,7 +84,7 @@ const VideoSlideItem = ({ slide, isActive, onToggleSound, onVideoEnded }: VideoS
       // 2. Slide ẩn đi -> Pause và Reset trạng thái
       video.pause();
       video.currentTime = 0; // Tua về đầu
-      
+
       // Reset về Mute để lần sau quay lại không bị ồn
       setIsMuted(true);
       if (video.muted === false) {
@@ -99,7 +99,7 @@ const VideoSlideItem = ({ slide, isActive, onToggleSound, onVideoEnded }: VideoS
       const newMutedState = !isMuted;
       videoRef.current.muted = newMutedState;
       setIsMuted(newMutedState);
-      
+
       // Báo lên cha để dừng/chạy Slider
       onToggleSound(newMutedState);
     }
@@ -115,13 +115,13 @@ const VideoSlideItem = ({ slide, isActive, onToggleSound, onVideoEnded }: VideoS
         // Lưu ý: Không dùng autoPlay ở đây vì đã control bằng useEffect
         muted={isMuted}
         // Nếu Muted -> Loop. Nếu có tiếng -> Chạy 1 lần rồi trigger onEnded
-        loop={isMuted} 
+        loop={isMuted}
         playsInline
         onEnded={() => {
           if (!isMuted) onVideoEnded();
         }}
       />
-      
+
       {/* Nút Volume */}
       <button
         onClick={(e) => {
@@ -161,7 +161,7 @@ export default function Hero({ slides = MOCK_SLIDES }: HeroProps) {
   return (
     <section className="bg-gray-50 pb-12">
       <div className="container mx-auto px-4 md:px-10">
-        
+
         {/* Wrapper Slider */}
         <div className="w-full relative rounded-2xl overflow-hidden shadow-sm bg-gray-200 group">
           <Swiper
@@ -182,20 +182,21 @@ export default function Hero({ slides = MOCK_SLIDES }: HeroProps) {
                 {({ isActive }) => (
                   <div className="relative w-full h-full bg-gray-100">
                     {slide.type === "video" ? (
-                      <VideoSlideItem 
+                      <VideoSlideItem
                         slide={slide}
                         isActive={isActive}
                         onToggleSound={handleSoundChange}
                         onVideoEnded={handleVideoEnded}
                       />
-                    ) : (
+                    ) : slide.url ? (
+                      // Render Image only if URL is present (Fix Console Error)
                       <img
                         src={slide.url}
-                        alt={slide.alt}
+                        alt={slide.alt || "Banner"}
                         className="absolute inset-0 w-full h-full object-cover"
                         loading="eager" // Load ngay lập tức (LCP optimization)
                       />
-                    )}
+                    ) : null}
                   </div>
                 )}
               </SwiperSlide>

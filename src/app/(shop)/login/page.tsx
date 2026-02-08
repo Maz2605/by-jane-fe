@@ -60,19 +60,32 @@ export default function LoginPage() {
         });
         setLoading(false);
       } else if (result?.ok) {
+        // 🔥 Refresh session to get latest role
+        const { getSession } = await import("next-auth/react");
+        const session = await getSession();
+
+        const userRole = (session?.user as any)?.role?.name;
+        const isAdmin = ['Admin', 'Super Admin', 'admin'].includes(userRole);
+
         setToastState({
           isOpen: true,
           type: 'success',
           title: 'Đăng nhập thành công',
-          message: 'Chào mừng bạn quay trở lại!',
+          message: isAdmin ? 'Chào mừng Admin quay lại!' : `Chào mừng bạn quay trở lại! (Role: ${userRole || 'Không xác định'})`,
         });
 
         // Wait for toast to show, then redirect
         setTimeout(() => {
-          router.replace("/");
+          if (isAdmin) {
+            router.replace("/admin");
+          } else {
+            router.replace("/");
+          }
           router.refresh();
         }, 1000);
       }
+
+
     } catch (err: any) {
       console.error("Login Error:", err);
       setToastState({
@@ -87,9 +100,7 @@ export default function LoginPage() {
 
 
   return (
-    <main className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      <Header />
-
+    <div className="flex-1 flex flex-col bg-gray-50">
       <div className="grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="bg-white p-8 sm:p-10 rounded-2xl shadow-xl w-full max-w-md border border-gray-100 relative overflow-hidden">
 
@@ -105,18 +116,18 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email */}
+            {/* Email / Username */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email hoặc Tên đăng nhập</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="email"
+                  type="text"
                   required
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:border-[#FF5E4D] focus:ring-1 focus:ring-[#FF5E4D] transition-all placeholder-gray-400"
-                  placeholder="name@example.com"
+                  placeholder="name@example.com hoặc username"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
@@ -188,8 +199,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <Footer />
-
       <ToastNotification
         isOpen={toastState.isOpen}
         type={toastState.type}
@@ -197,6 +206,6 @@ export default function LoginPage() {
         message={toastState.message}
         onClose={handleCloseToast}
       />
-    </main>
+    </div>
   );
 }

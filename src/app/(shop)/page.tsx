@@ -23,14 +23,12 @@ export default async function Home() {
   ]);
   const randomProducts = await getDailyRandomProducts();
   return (
-    <main className="min-h-screen bg-white">
-      <Header />
+    <>
       <Hero slides={slidesToRender} />
       <FlashSale data={flashSaleData} categorySlug="set-hoc-duong" />
       <CategoryList data={categories} />
       <ProductList data={randomProducts} title="Gợi ý hôm nay" />
-      <HomeNewsSection/>
-      <Footer />
-    </main>
+      <HomeNewsSection />
+    </>
   );
 }
