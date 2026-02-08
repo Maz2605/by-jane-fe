@@ -71,7 +71,7 @@ export default function LoginPage() {
           isOpen: true,
           type: 'success',
           title: 'Đăng nhập thành công',
-          message: isAdmin ? 'Chào mừng Admin quay lại!' : `Chào mừng bạn quay trở lại! (Role: ${userRole || 'Không xác định'})`,
+          message: isAdmin ? 'Chào mừng Quản trị viên quay trở lại!' : 'Chào mừng bạn đã quay chạy lại!',
         });
 
         // Wait for toast to show, then redirect
