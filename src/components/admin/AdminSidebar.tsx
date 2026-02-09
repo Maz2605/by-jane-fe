@@ -9,7 +9,9 @@ import {
     ShoppingCart,
     Users,
     Settings,
-    LogOut
+    LogOut,
+    Newspaper,
+    Ticket
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +24,8 @@ const sidebarItems = [
     { href: "/admin/products", label: "Sản phẩm", icon: ShoppingBag },
     { href: "/admin/orders", label: "Đơn hàng", icon: ShoppingCart },
     { href: "/admin/customers", label: "Khách hàng", icon: Users },
+    { href: "/admin/news", label: "Tin tức", icon: Newspaper },
+    { href: "/admin/vouchers", label: "Mã giảm giá", icon: Ticket },
     { href: "/admin/settings", label: "Cài đặt", icon: Settings },
 ];
 

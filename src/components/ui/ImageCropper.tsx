@@ -9,9 +9,17 @@ interface ImageCropperProps {
     image: string;
     onCropComplete: (croppedImageBlob: Blob) => void;
     onCancel: () => void;
+    aspect?: number;
+    cropShape?: "rect" | "round";
 }
 
-export default function ImageCropper({ image, onCropComplete, onCancel }: ImageCropperProps) {
+export default function ImageCropper({
+    image,
+    onCropComplete,
+    onCancel,
+    aspect = 1,
+    cropShape = "rect"
+}: ImageCropperProps) {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
@@ -63,12 +71,12 @@ export default function ImageCropper({ image, onCropComplete, onCancel }: ImageC
                         image={image}
                         crop={crop}
                         zoom={zoom}
-                        aspect={1} // Avatar thường vuông
+                        aspect={aspect}
                         onCropChange={onCropChange}
                         onCropComplete={onCropCompleteHandler}
                         onZoomChange={onZoomChange}
                         showGrid={true}
-                        cropShape="round" // Hiển thị khung tròn cho đẹp (optional)
+                        cropShape={cropShape}
                     />
                 </div>
 
