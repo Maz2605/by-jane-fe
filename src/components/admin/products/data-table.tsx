@@ -1,4 +1,3 @@
-"use strict";
 "use client";
 
 import * as React from "react";
@@ -14,7 +13,7 @@ import {
     getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -32,29 +31,26 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import { useRouter } from "next/navigation";
+import { DataTableFacetedFilter } from "@/components/ui/data-table-faceted-filter";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
+    onRowClick?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
     columns,
     data,
+    onRowClick,
 }: DataTableProps<TData, TValue>) {
+    const router = useRouter();
     const [sorting, setSorting] = React.useState<SortingState>([]);
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-        []
-    );
-    const [columnVisibility, setColumnVisibility] =
-        React.useState<VisibilityState>({});
+    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+    const [globalFilter, setGlobalFilter] = React.useState("");
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = React.useState({});
 
     const table = useReactTable({
@@ -62,6 +58,7 @@ export function DataTable<TData, TValue>({
         columns,
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
+        onGlobalFilterChange: setGlobalFilter,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -71,91 +68,118 @@ export function DataTable<TData, TValue>({
         state: {
             sorting,
             columnFilters,
+            globalFilter,
             columnVisibility,
             rowSelection,
         },
     });
 
+    // Helper to get unique categories
+    const categories = React.useMemo(() => {
+        const unique = Array.from(new Set(data.map((item: any) => item.category))).filter(Boolean);
+        return unique.map((c) => ({ label: c as string, value: c as string }));
+    }, [data]);
+
+    const productStatuses = [
+        { value: "active", label: "Active" },
+        { value: "draft", label: "Draft" },
+        { value: "archived", label: "Archived" },
+    ];
+
     return (
-        <div className="w-full">
-            <div className="flex items-center py-4 gap-5">
-                <Input
-                    placeholder="Lọc sản phẩm..."
-                    value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-                    onChange={(event) =>
-                        table.getColumn("name")?.setFilterValue(event.target.value)
-                    }
-                    className="max-w-sm"
-                />
+        <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4 py-4 bg-white p-4 rounded-xl border shadow-sm">
+                <div className="relative w-full max-w-sm">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Tìm kiếm Tên, SKU, Danh mục..."
+                        value={globalFilter ?? ""}
+                        onChange={(event) => setGlobalFilter(event.target.value)}
+                        className="pl-9"
+                    />
+                </div>
 
-                {/* Category Filter */}
-                <Select
-                    value={(table.getColumn("category")?.getFilterValue() as string) ?? "all"}
-                    onValueChange={(value) =>
-                        table.getColumn("category")?.setFilterValue(value === "all" ? "" : value)
-                    }
-                >
-                    <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="Chọn danh mục" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Tất cả danh mục</SelectItem>
-                        {Array.from(new Set(data.map((item: any) => item.category)))
-                            .filter(Boolean)
-                            .map((category: any) => (
-                                <SelectItem key={category} value={category}>
-                                    {category}
-                                </SelectItem>
-                            ))}
-                    </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2 flex-wrap">
+                    {table.getColumn("category") && (
+                        <DataTableFacetedFilter
+                            column={table.getColumn("category")}
+                            title="Danh mục"
+                            options={categories}
+                        />
+                    )}
 
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="ml-auto">
-                            Cột <ChevronDown className="ml-2 h-4 w-4" />
+                    {table.getColumn("status") && (
+                        <DataTableFacetedFilter
+                            column={table.getColumn("status")}
+                            title="Trạng thái"
+                            options={productStatuses}
+                        />
+                    )}
+
+                    {(columnFilters.length > 0 || globalFilter) && (
+                        <Button
+                            variant="ghost"
+                            onClick={() => {
+                                setColumnFilters([]);
+                                setGlobalFilter("");
+                                table.resetColumnFilters();
+                                table.resetGlobalFilter();
+                            }}
+                            className="h-8 px-2 lg:px-3"
+                        >
+                            Xóa lọc
+                            <Search className="ml-2 h-4 w-4" />
                         </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        {table
-                            .getAllColumns()
-                            .filter((column) => column.getCanHide())
-                            .map((column) => {
-                                let headerLabel = column.id;
-                                switch (column.id) {
-                                    case "thumbnail": headerLabel = "Hình ảnh"; break;
-                                    case "name": headerLabel = "Tên sản phẩm"; break;
-                                    case "status": headerLabel = "Trạng thái"; break;
-                                    case "stock": headerLabel = "Kho hàng"; break;
-                                    case "category": headerLabel = "Danh mục"; break;
-                                    case "price": headerLabel = "Giá"; break;
-                                    case "actions": headerLabel = "Hành động"; break;
-                                }
+                    )}
 
-                                return (
-                                    <DropdownMenuCheckboxItem
-                                        key={column.id}
-                                        className="capitalize"
-                                        checked={column.getIsVisible()}
-                                        onCheckedChange={(value) =>
-                                            column.toggleVisibility(!!value)
-                                        }
-                                    >
-                                        {headerLabel}
-                                    </DropdownMenuCheckboxItem>
-                                );
-                            })}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="ml-auto">
+                                Cột <ChevronDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {table
+                                .getAllColumns()
+                                .filter((column) => column.getCanHide())
+                                .map((column) => {
+                                    let headerLabel = column.id;
+                                    switch (column.id) {
+                                        case "thumbnail": headerLabel = "Hình ảnh"; break;
+                                        case "name": headerLabel = "Tên sản phẩm"; break;
+                                        case "status": headerLabel = "Trạng thái"; break;
+                                        case "stock": headerLabel = "Kho hàng"; break;
+                                        case "category": headerLabel = "Danh mục"; break;
+                                        case "price": headerLabel = "Giá"; break;
+                                        case "actions": headerLabel = "Hành động"; break;
+                                    }
+
+                                    return (
+                                        <DropdownMenuCheckboxItem
+                                            key={column.id}
+                                            className="capitalize"
+                                            checked={column.getIsVisible()}
+                                            onCheckedChange={(value) =>
+                                                column.toggleVisibility(!!value)
+                                            }
+                                        >
+                                            {headerLabel}
+                                        </DropdownMenuCheckboxItem>
+                                    );
+                                })}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
-            <div className="rounded-md border bg-white">
+
+            <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-gray-50">
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => {
                                     return (
-                                        <TableHead key={header.id}>
+                                        <TableHead key={header.id} className="font-semibold text-gray-700">
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
@@ -174,9 +198,11 @@ export function DataTable<TData, TValue>({
                                 <TableRow
                                     key={row.id}
                                     data-state={row.getIsSelected() && "selected"}
+                                    className={`hover:bg-gray-50 ${onRowClick ? "cursor-pointer" : ""}`}
+                                    onClick={() => onRowClick && onRowClick(row.original)}
                                 >
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
+                                        <TableCell key={cell.id} className="py-3">
                                             {flexRender(
                                                 cell.column.columnDef.cell,
                                                 cell.getContext()
@@ -199,73 +225,8 @@ export function DataTable<TData, TValue>({
                 </Table>
             </div>
 
-            <div className="flex items-center justify-between py-4">
-                <div className="flex-1 text-sm text-muted-foreground">
-                    {table.getFilteredSelectedRowModel().rows.length} trong số{" "}
-                    {table.getFilteredRowModel().rows.length} hàng được chọn.
-                </div>
-
-                <div className="flex items-center space-x-6 lg:space-x-8">
-                    <div className="flex items-center space-x-2">
-                        <p className="text-sm font-medium">Hàng mỗi trang</p>
-                        <Select
-                            value={`${table.getState().pagination.pageSize}`}
-                            onValueChange={(value) => {
-                                table.setPageSize(Number(value));
-                            }}
-                        >
-                            <SelectTrigger className="h-8 w-[70px]">
-                                <SelectValue placeholder={table.getState().pagination.pageSize} />
-                            </SelectTrigger>
-                            <SelectContent side="top">
-                                {[10, 20, 30, 40, 50, 100].map((pageSize) => (
-                                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                                        {pageSize}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                        <Button
-                            variant="outline"
-                            className="h-8 w-8 p-0"
-                            onClick={() => table.previousPage()}
-                            disabled={!table.getCanPreviousPage()}
-                        >
-                            <span className="sr-only">Trang trước</span>
-                            {"<"}
-                        </Button>
-                        <div className="flex items-center gap-1">
-                            {Array.from({ length: table.getPageCount() }, (_, i) => i).map(
-                                (pageIndex) => (
-                                    <Button
-                                        key={pageIndex}
-                                        variant={
-                                            table.getState().pagination.pageIndex === pageIndex
-                                                ? "orange"
-                                                : "outline"
-                                        }
-                                        className="h-8 w-8 p-0"
-                                        onClick={() => table.setPageIndex(pageIndex)}
-                                    >
-                                        {pageIndex + 1}
-                                    </Button>
-                                )
-                            )}
-                        </div>
-                        <Button
-                            variant="outline"
-                            className="h-8 w-8 p-0"
-                            onClick={() => table.nextPage()}
-                            disabled={!table.getCanNextPage()}
-                        >
-                            <span className="sr-only">Trang sau</span>
-                            {">"}
-                        </Button>
-                    </div>
-                </div>
+            <div className="py-4">
+                <DataTablePagination table={table} />
             </div>
         </div>
     );

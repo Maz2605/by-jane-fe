@@ -1,11 +1,16 @@
+"use client";
+
 import { DataTable } from "@/components/admin/products/data-table";
 import { columns } from "@/components/admin/products/columns";
 import { MOCK_PRODUCTS } from "@/lib/mock-data/products";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function ProductsPage() {
+    const router = useRouter();
+
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -22,7 +27,11 @@ export default function ProductsPage() {
                 </div>
             </div>
 
-            <DataTable columns={columns} data={MOCK_PRODUCTS} />
+            <DataTable
+                columns={columns}
+                data={MOCK_PRODUCTS}
+                onRowClick={(row) => router.push(`/admin/products/${row.id}`)}
+            />
         </div>
     );
 }

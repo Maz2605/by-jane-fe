@@ -13,6 +13,28 @@ export const MOCK_PRODUCTS: Product[] = [
         thumbnail: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg",
         featured: false,
         createdAt: "2023-10-25T10:00:00Z",
+        variants: [
+            {
+                name: "Ao Thun Basic - L / Trang",
+                price: 150000,
+                stock: 50,
+                sku: "TS-001-L-W",
+                options: [
+                    { name: "Size", value: "L" },
+                    { name: "Mau", value: "Trang" }
+                ]
+            },
+            {
+                name: "Ao Thun Basic - M / Den",
+                price: 150000,
+                stock: 70,
+                sku: "TS-001-M-B",
+                options: [
+                    { name: "Size", value: "M" },
+                    { name: "Mau", value: "Den" }
+                ]
+            }
+        ]
     },
     {
         id: "PROD-002",

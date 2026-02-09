@@ -1,9 +1,7 @@
-"use strict";
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Product } from "@/lib/validations/product";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -17,6 +15,13 @@ import {
 import { MoreHorizontal, Edit, Trash, Copy } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { EditableStatusCell } from "@/components/admin/editable-status-cell";
+
+const PRODUCT_STATUS_OPTIONS = [
+    { value: "active", label: "Active", color: "bg-orange-100 text-orange-800 border-orange-200" },
+    { value: "draft", label: "Draft", color: "bg-gray-100 text-gray-800 border-gray-200" },
+    { value: "archived", label: "Archived", color: "bg-red-100 text-red-800 border-red-200" },
+];
 
 export const columns: ColumnDef<Product>[] = [
     {
@@ -76,13 +81,14 @@ export const columns: ColumnDef<Product>[] = [
         },
     },
     {
-        accessorKey: "name",
+        id: "name",
+        accessorFn: (row) => `${row.name} ${row.sku}`,
         header: "Tên sản phẩm",
         cell: ({ row }) => {
             return (
                 <div className="flex flex-col min-w-[200px] max-w-[300px]">
-                    <span className="font-medium truncate" title={row.getValue("name")}>
-                        {row.getValue("name")}
+                    <span className="font-medium truncate" title={row.original.name}>
+                        {row.original.name}
                     </span>
                     {row.original.sku && (
                         <span className="text-xs text-muted-foreground">SKU: {row.original.sku}</span>
@@ -97,20 +103,12 @@ export const columns: ColumnDef<Product>[] = [
         cell: ({ row }) => {
             const status = row.getValue("status") as string;
             return (
-                <div className="w-[100px]">
-                    <Badge
-                        variant={
-                            status === "active"
-                                ? "orange"
-                                : status === "draft"
-                                    ? "orange" /* User asked for orange status badge */
-                                    : "outline"
-                        }
-                        className="capitalize px-3 py-1"
-                    >
-                        {status}
-                    </Badge>
-                </div>
+                <EditableStatusCell
+                    value={status}
+                    options={PRODUCT_STATUS_OPTIONS}
+                    onChange={(newVal) => console.log(newVal)} // Mock update
+                    referenceText={row.original.name}
+                />
             );
         },
     },
