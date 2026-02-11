@@ -37,12 +37,13 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Copy, ImagePlus, Loader2, Plus, RefreshCw, Trash, X } from "lucide-react";
+import { Copy, ImagePlus, Loader2, Plus, RefreshCw, Trash, X, Wand2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 import Image from "next/image";
 
 import { cn, removeVietnameseTones } from "@/lib/utils";
+
+import { showSuccessToast, showErrorToast, dismissToast } from "@/lib/toast-utils";
 
 interface ProductFormProps {
     initialData?: Product | null;
@@ -106,7 +107,28 @@ export function ProductForm({ initialData }: ProductFormProps) {
         }
     }, [replaceOptions]);
 
-    // Effect to generate variants when options change
+    // Helper to generate Cartesian product
+    const generateCartesianProduct = (opts: any[]) => {
+        return opts.reduce(
+            (acc, opt) => {
+                if (!opt.values || opt.values.length === 0) return acc;
+                const newAcc: any[] = [];
+                acc.forEach((existingMeta: any) => {
+                    opt.values.forEach((val: string) => {
+                        newAcc.push({
+                            ...existingMeta,
+                            [opt.name]: val,
+                            _options: [...(existingMeta._options || []), { name: opt.name, value: val }]
+                        });
+                    });
+                });
+                return newAcc;
+            },
+            [{}]
+        );
+    };
+
+    // Generate variants when options change
     useEffect(() => {
         if (!hasVariants) {
             return;
@@ -115,58 +137,133 @@ export function ProductForm({ initialData }: ProductFormProps) {
         const options = form.getValues("options") || [];
         if (options.length === 0) return;
 
-        // Cartesian product to generate variants
-        const generateCartesianProduct = (opts: any[]) => {
-            return opts.reduce(
-                (acc, opt) => {
-                    if (!opt.values || opt.values.length === 0) return acc;
-                    const newAcc: any[] = [];
-                    acc.forEach((existingMeta: any) => {
-                        opt.values.forEach((val: string) => {
-                            newAcc.push({
-                                ...existingMeta,
-                                [opt.name]: val,
-                                _options: [...(existingMeta._options || []), { name: opt.name, value: val }]
-                            });
-                        });
-                    });
-                    return newAcc;
-                },
-                [{}]
-            );
-        };
+
 
         const combinations = generateCartesianProduct(options);
         // Remove the initial empty object if combinations were generated
         const validCombinations = combinations.filter((c: any) => c._options && c._options.length > 0);
 
+        const currentSku = form.getValues("sku");
+
         const newVariants = validCombinations.map((combo: any) => {
             const name = combo._options.map((o: any) => o.value).join(" / ");
+            // Calculate SKU suffix
+            const suffix = getVariantSuffix(combo._options);
+            const variantSku = currentSku ? `${currentSku}-${suffix}` : suffix;
+
             return {
                 name: name,
                 price: form.getValues("price"),
                 stock: 0,
-                sku: `${form.getValues("sku")}-${name.replace(/\s+/g, "-").toUpperCase()}`,
+                sku: variantSku,
                 options: combo._options,
             };
         });
 
-        // Only update if options actually changed to avoid infinite loop
-        // Ideally we check deep equality, but here we just replace for simplicity in this demo
-        // In a real app, careful dependency tracking is needed.
         if (newVariants.length > 0) {
-            // Keep existing values if variant name matches
             const currentVariants = form.getValues("variants") || [];
             const mergedVariants = newVariants.map((nv: any) => {
                 const existing = currentVariants.find((cv) => cv.name === nv.name);
                 if (existing) {
-                    return { ...nv, price: existing.price, stock: existing.stock, sku: existing.sku };
+                    // Update SKU if Main SKU changed (handled by other effect, but good to be safe)
+                    // But here we prioritize keeping existing data
+                    return { ...nv, price: existing.price, stock: existing.stock, sku: existing.sku || nv.sku };
                 }
                 return nv;
             });
             replaceVariants(mergedVariants);
         }
     }, [form.watch("options")]);
+
+
+    // --- SKU LOGIC ---
+
+    // 1. Helper to generate Variant Suffix: COLOR-SIZE
+    const getVariantSuffix = (options: any[]) => {
+        const colorOpt = options.find((o: any) => o.name === "Màu sắc");
+        const sizeOpt = options.find((o: any) => o.name === "Kích thước");
+
+        let suffixParts = [];
+
+        if (colorOpt) {
+            const code = removeVietnameseTones(colorOpt.value || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase().substring(0, 3);
+            if (code) suffixParts.push(code);
+        }
+        if (sizeOpt) {
+            const code = removeVietnameseTones(sizeOpt.value || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+            if (code) suffixParts.push(code);
+        }
+
+        // Fallback for other options
+        if (suffixParts.length === 0) {
+            suffixParts = options.map((o: any) =>
+                removeVietnameseTones(o.value || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase().substring(0, 3)
+            );
+        }
+
+        return suffixParts.join("-");
+    };
+
+    // 2. Auto-generate Main SKU from Name
+    const generateSkuFromName = (force = false) => {
+        const currentSku = form.getValues("sku");
+        if (!force && currentSku) return; // Only auto-gen on blur if empty
+
+        const name = form.getValues("name");
+        if (!name) {
+            if (force) showErrorToast("Vui lòng nhập tên sản phẩm trước");
+            return;
+        }
+
+        const normalized = removeVietnameseTones(name)
+            .replace(/[^a-zA-Z0-9\s]/g, "") // Keep alphanumeric and spaces
+            .trim()
+            .replace(/\s+/g, "-") // Space to dash
+            .toUpperCase();
+
+        // Limit length
+        const shortSku = normalized.length > 20 ? normalized.substring(0, 20) : normalized;
+
+        // Add random suffix for uniqueness if forced manual generation to avoid conflict
+        const finalSku = force ? `${shortSku}-${Math.floor(Math.random() * 1000)}` : shortSku;
+
+        form.setValue("sku", finalSku, { shouldValidate: true });
+        if (force) showSuccessToast(`Đã tạo mã SKU: ${finalSku}`);
+    };
+
+    // 3. Sync Main SKU to Variants
+    // Watch 'sku' changes. If it changes, we ask user or auto-update?
+    // Requirement is "Ensure... variant SKUs are also updated".
+    // We'll use a specific function for this to avoid infinite loops with useEffect, 
+    // or use a refined useEffect.
+    const mainSku = form.watch("sku");
+
+    useEffect(() => {
+        if (!hasVariants) return;
+        const currentVariants = form.getValues("variants") || [];
+        if (currentVariants.length === 0) return;
+
+        // Debounce or just check if meaningful change
+        if (!mainSku) return;
+
+        const updatedVariants = currentVariants.map((v: any) => {
+            const suffix = getVariantSuffix(v.options || []);
+            // New Format: MAIN-SKU-SUFFIX
+            const variantSku = mainSku ? `${mainSku}-${suffix}` : suffix;
+            return {
+                ...v,
+                sku: variantSku
+            };
+        });
+
+        // Use JSON.stringify to compare avoiding loop if identical
+        if (JSON.stringify(updatedVariants) !== JSON.stringify(currentVariants)) {
+            // Only update fields that need it to avoid losing focus if editing variants
+            // unique update
+            form.setValue("variants", updatedVariants);
+        }
+
+    }, [mainSku, hasVariants, form]); // Dependency on mainSku
 
     // Calculate total stock from variants
     const variants = form.watch("variants");
@@ -182,11 +279,12 @@ export function ProductForm({ initialData }: ProductFormProps) {
             setLoading(true);
             console.log("Submitting data:", data);
             await new Promise((resolve) => setTimeout(resolve, 1000));
-            toast.success(toastMessage);
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            showSuccessToast(toastMessage);
             router.push("/admin/products");
             router.refresh();
         } catch (error) {
-            toast.error("Đã có lỗi xảy ra.");
+            showErrorToast("Đã có lỗi xảy ra.");
         } finally {
             setLoading(false);
         }
@@ -235,6 +333,10 @@ export function ProductForm({ initialData }: ProductFormProps) {
                                                         disabled={loading}
                                                         placeholder="Nhập tên sản phẩm"
                                                         {...field}
+                                                        onBlur={(e) => {
+                                                            field.onBlur();
+                                                            generateSkuFromName();
+                                                        }}
                                                     />
                                                 </FormControl>
                                                 <FormMessage />
@@ -431,40 +533,31 @@ export function ProductForm({ initialData }: ProductFormProps) {
                                                 className="hover:bg-gray-50 text-gray-700"
                                                 onClick={() => {
                                                     const options = form.getValues("options");
-                                                    if (!options || options.length < 2) return;
+                                                    if (!options || options.length === 0) return;
 
-                                                    const colorOption = options.find(o => o.name === "Màu sắc");
-                                                    const sizeOption = options.find(o => o.name === "Kích thước");
+                                                    const combinations = generateCartesianProduct(options);
+                                                    // Remove the initial empty object if combinations were generated
+                                                    const validCombinations = combinations.filter((c: any) => c._options && c._options.length > 0);
 
-                                                    if (!colorOption?.values?.length || !sizeOption?.values?.length) {
-                                                        // Could add a toast here if values are missing
-                                                        return;
-                                                    }
+                                                    const currentSku = form.getValues("sku");
 
-                                                    const newVariants: any[] = [];
+                                                    const newVariants = validCombinations.map((combo: any) => {
+                                                        const name = combo._options.map((o: any) => o.value).join(" / ");
+                                                        // Calculate SKU suffix
+                                                        const suffix = getVariantSuffix(combo._options);
+                                                        const variantSku = currentSku ? `${currentSku}-${suffix}` : suffix;
 
-                                                    // Generate Cartesian product
-                                                    const mainSku = form.getValues("sku");
-                                                    const skuPrefix = mainSku ? mainSku : "PROD";
-
-                                                    colorOption.values.forEach((color: string) => {
-                                                        sizeOption.values.forEach((size: string) => {
-                                                            const colorCode = removeVietnameseTones(color).replace(/[^a-zA-Z0-9]/g, "").toUpperCase().substring(0, 3);
-                                                            const sizeCode = removeVietnameseTones(size).replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-                                                            newVariants.push({
-                                                                name: `${color} / ${size}`,
-                                                                price: form.getValues("price") || 0,
-                                                                stock: 0,
-                                                                sku: `${skuPrefix}-${colorCode}-${sizeCode}`,
-                                                                options: [
-                                                                    { name: "Màu sắc", value: color },
-                                                                    { name: "Kích thước", value: size }
-                                                                ]
-                                                            });
-                                                        });
+                                                        return {
+                                                            name: name,
+                                                            price: form.getValues("price"),
+                                                            stock: 0,
+                                                            sku: variantSku,
+                                                            options: combo._options,
+                                                        };
                                                     });
 
                                                     replaceVariants(newVariants);
+                                                    showSuccessToast("Đã sinh biến thể tự động thành công!");
                                                 }}
                                             >
                                                 <RefreshCw className="mr-2 h-4 w-4" /> Sinh biến thể tự động
@@ -607,8 +700,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
                                                             }));
 
                                                             replaceVariants(updatedVariants);
-                                                            toast.dismiss(); // Dismiss previous toasts to avoid spam
-                                                            toast.success("Đã cập nhật giá cho tất cả biến thể");
+                                                            dismissToast(); // Dismiss previous toasts to avoid spam
+                                                            showSuccessToast("Đã cập nhật giá cho tất cả biến thể");
                                                         }}
                                                     >
                                                         Áp dụng cho tất cả
@@ -679,6 +772,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                                             id="featured"
                                             checked={form.watch("featured")}
                                             onCheckedChange={(checked) => form.setValue("featured", checked)}
+                                            className="data-[state=checked]:bg-orange-500"
                                         />
                                         <label htmlFor="featured" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                             Sản phẩm nổi bật
@@ -728,7 +822,7 @@ export function ProductForm({ initialData }: ProductFormProps) {
                                                     <FormControl>
                                                         <Input
                                                             disabled={loading}
-                                                            placeholder="SKU-001"
+                                                            placeholder="Tự động tạo từ tên..."
                                                             {...field}
                                                         />
                                                     </FormControl>
@@ -737,16 +831,10 @@ export function ProductForm({ initialData }: ProductFormProps) {
                                                         variant="outline"
                                                         size="sm"
                                                         className="whitespace-nowrap"
-                                                        onClick={() => {
-                                                            const name = form.getValues("name");
-                                                            const normalizedName = name ? removeVietnameseTones(name).replace(/[^a-zA-Z0-9]/g, "") : "SP";
-                                                            const prefix = normalizedName.substring(0, 3).toUpperCase();
-                                                            const random = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
-                                                            const newSku = `${prefix}-${random}`;
-                                                            form.setValue("sku", newSku);
-                                                            toast.success(`Đã tạo mã SKU: ${newSku}`);
-                                                        }}
+                                                        onClick={() => generateSkuFromName(true)}
+                                                        title="Tạo mã SKU tự động từ tên sản phẩm"
                                                     >
+                                                        <Wand2 className="mr-2 h-4 w-4" />
                                                         Tạo mã
                                                     </Button>
                                                     <Button
@@ -757,28 +845,28 @@ export function ProductForm({ initialData }: ProductFormProps) {
                                                         onClick={() => {
                                                             const currentSku = form.getValues("sku");
                                                             if (!currentSku) {
-                                                                toast.error("Vui lòng nhập SKU chính trước");
+                                                                showErrorToast("Vui lòng nhập SKU chính trước");
                                                                 return;
                                                             }
 
                                                             const currentVariants = form.getValues("variants") || [];
                                                             if (currentVariants.length === 0) {
-                                                                toast.error("Chưa có biến thể nào để đồng bộ");
+                                                                showErrorToast("Chưa có biến thể nào để đồng bộ");
                                                                 return;
                                                             }
 
                                                             const updatedVariants = currentVariants.map((v: any) => {
-                                                                const options = v.options || [];
-                                                                const suffix = options.map((o: any) => removeVietnameseTones(o.value).replace(/[^a-zA-Z0-9]/g, "").toUpperCase().substring(0, 4)).join("-");
+                                                                const suffix = getVariantSuffix(v.options || []);
+                                                                const variantSku = currentSku ? `${currentSku}-${suffix}` : suffix;
                                                                 return {
                                                                     ...v,
-                                                                    sku: `${currentSku}-${suffix}`
+                                                                    sku: variantSku
                                                                 };
                                                             });
 
                                                             replaceVariants(updatedVariants);
-                                                            toast.dismiss();
-                                                            toast.success("Đã đồng bộ SKU cho tất cả biến thể");
+                                                            dismissToast();
+                                                            showSuccessToast("Đã đồng bộ SKU cho tất cả biến thể");
                                                         }}
                                                     >
                                                         <Copy className="h-4 w-4" />
@@ -812,8 +900,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
                                                             const currentVariants = form.getValues("variants") || [];
                                                             const totalStock = currentVariants.reduce((acc, variant) => acc + (Number(variant.stock) || 0), 0);
                                                             form.setValue("stock", totalStock);
-                                                            toast.dismiss(); // Dismiss previous toasts
-                                                            toast.success("Đã cập nhật lại tổng kho");
+                                                            dismissToast(); // Dismiss previous toasts
+                                                            showSuccessToast("Đã cập nhật lại tổng kho");
                                                         }}
                                                     >
                                                         <RefreshCw className="h-4 w-4" />

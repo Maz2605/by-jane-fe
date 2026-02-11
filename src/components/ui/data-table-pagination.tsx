@@ -16,7 +16,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { toast } from "react-hot-toast";
+import { showErrorToast } from "@/lib/toast-utils";
 
 interface DataTablePaginationProps<TData> {
     table: Table<TData>;
@@ -194,18 +194,7 @@ export function DataTablePagination<TData>({
                                 const page = Number(target.value);
 
                                 if (isNaN(page) || page < 1 || page > pageCount) {
-                                    toast.error(`Trang không hợp lệ! Vui lòng nhập từ 1 đến ${pageCount}`, {
-                                        style: {
-                                            border: '1px solid #F87171',
-                                            padding: '8px',
-                                            color: '#B91C1C',
-                                            background: '#FEF2F2',
-                                        },
-                                        iconTheme: {
-                                            primary: '#EF4444',
-                                            secondary: '#FFFAEE',
-                                        },
-                                    });
+                                    showErrorToast(`Trang không hợp lệ! Vui lòng nhập từ 1 đến ${pageCount}`);
                                     return;
                                 }
 

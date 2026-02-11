@@ -3,8 +3,8 @@
 import * as React from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "react-hot-toast";
-import { motion } from "framer-motion";
+import { showSuccessToast } from "@/lib/toast-utils";
+
 
 interface EditableStatusCellProps {
     value: string;
@@ -33,45 +33,7 @@ export function EditableStatusCell({ value, options, onChange, iconRenderer, ref
         onChange(val);
 
         // 3. Custom Toast (Matching ToastNotification style with Framer Motion)
-        toast.custom((t) => (
-            <motion.div
-                initial={{ opacity: 0, y: -50 }}
-                animate={{
-                    opacity: t.visible ? 1 : 0,
-                    y: t.visible ? 0 : -50,
-                    scale: t.visible ? 1 : 0.95
-                }}
-                transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 25 }}
-                className="pointer-events-auto flex items-start gap-3 rounded-lg border p-4 shadow-lg min-w-[320px] max-w-md backdrop-blur-sm bg-emerald-50 border-emerald-200"
-            >
-                {/* Icon */}
-                <div className="flex-shrink-0 mt-0.5 text-emerald-500">
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-emerald-800">
-                        Cập nhật thành công
-                    </h3>
-                    <p className="text-sm mt-1 leading-relaxed text-emerald-800 font-medium">
-                        Đã đổi trạng thái của <b>{referenceText}</b> sang {newOption?.label}
-                    </p>
-                </div>
-
-                {/* Close Button */}
-                <button
-                    onClick={() => toast.dismiss(t.id)}
-                    className="flex-shrink-0 -mr-1 -mt-1 p-1 rounded-md hover:bg-black/10 transition-colors text-emerald-800"
-                >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </motion.div>
-        ), { duration: 4000 });
+        showSuccessToast(`Đã đổi trạng thái của ${referenceText} sang ${newOption?.label}`);
     };
 
     return (

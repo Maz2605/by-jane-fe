@@ -28,7 +28,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useState } from "react";
 import ImageCropper from "@/components/ui/ImageCropper";
-import ToastNotification from "@/components/ui/ToastNotification";
+import { showSuccessToast } from "@/lib/toast-utils";
 
 const formSchema = z.object({
     name: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
@@ -46,15 +46,6 @@ export default function AddCustomerPage() {
     const [imageLoading, setImageLoading] = useState(false);
     const [cropImage, setCropImage] = useState<string | null>(null);
     const [croppedAvatar, setCroppedAvatar] = useState<string | null>(null);
-    const [toastState, setToastState] = useState<{
-        isOpen: boolean;
-        message: string;
-        type: 'success' | 'error' | 'warning';
-    }>({
-        isOpen: false,
-        message: '',
-        type: 'success',
-    });
 
     const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -88,18 +79,14 @@ export default function AddCustomerPage() {
     function onSubmit(values: z.infer<typeof formSchema>) {
         // Here you would typically make an API call to save the customer
         console.log(values);
-        setToastState({
-            isOpen: true,
-            message: "Thêm khách hàng thành công!",
-            type: "success"
-        });
+        showSuccessToast("Thêm khách hàng thành công!");
         setTimeout(() => {
             router.push("/admin/customers");
         }, 1000);
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" asChild>
                     <Link href="/admin/customers">
@@ -115,8 +102,8 @@ export default function AddCustomerPage() {
             </div>
 
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         <div className="lg:col-span-2">
                             <Card className="h-full">
                                 <CardHeader>
@@ -128,9 +115,9 @@ export default function AddCustomerPage() {
                                         name="name"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Tên khách hàng</FormLabel>
+                                                <FormLabel className="text-xs">Tên khách hàng</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="Nguyễn Văn A" className="h-12 text-base" {...field} />
+                                                    <Input placeholder="Nguyễn Văn A" className="h-8 text-xs" {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -142,9 +129,9 @@ export default function AddCustomerPage() {
                                             name="email"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Email</FormLabel>
+                                                    <FormLabel className="text-xs">Email</FormLabel>
                                                     <FormControl>
-                                                        <Input type="email" placeholder="example@gmail.com" className="h-12 text-base" {...field} />
+                                                        <Input type="email" placeholder="example@gmail.com" className="h-8 text-xs" {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -155,9 +142,9 @@ export default function AddCustomerPage() {
                                             name="phone"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Số điện thoại</FormLabel>
+                                                    <FormLabel className="text-xs">Số điện thoại</FormLabel>
                                                     <FormControl>
-                                                        <Input placeholder="0901234567" className="h-12 text-base" {...field} />
+                                                        <Input placeholder="0901234567" className="h-8 text-xs" {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -170,9 +157,9 @@ export default function AddCustomerPage() {
                                         name="password"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Mật khẩu</FormLabel>
+                                                <FormLabel className="text-xs">Mật khẩu</FormLabel>
                                                 <FormControl>
-                                                    <Input type="password" placeholder="******" className="h-12 text-base" {...field} />
+                                                    <Input type="password" placeholder="******" className="h-8 text-xs" {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -184,12 +171,12 @@ export default function AddCustomerPage() {
                                         name="address"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Địa chỉ</FormLabel>
+                                                <FormLabel className="text-xs">Địa chỉ</FormLabel>
                                                 <FormControl>
                                                     <Textarea
                                                         placeholder="Số 123, Đường ABC, Phường XYZ..."
-                                                        className="resize-none text-base p-4"
-                                                        rows={6}
+                                                        className="resize-none text-xs p-3 min-h-[80px]"
+                                                        rows={4}
                                                         {...field}
                                                     />
                                                 </FormControl>
@@ -202,7 +189,7 @@ export default function AddCustomerPage() {
                             </Card>
                         </div>
 
-                        <div className="lg:col-span-1 space-y-6">
+                        <div className="lg:col-span-1 space-y-4">
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Ảnh đại diện</CardTitle>
@@ -216,7 +203,7 @@ export default function AddCustomerPage() {
                                                 <FormControl>
                                                     <div className="flex flex-col items-center gap-4">
                                                         {field.value ? (
-                                                            <div className="relative h-40 w-40 rounded-full overflow-hidden border-2 border-gray-100 shadow-sm">
+                                                            <div className="relative h-32 w-32 rounded-full overflow-hidden border-2 border-gray-100 shadow-sm">
                                                                 <Image
                                                                     src={field.value}
                                                                     alt="Avatar"
@@ -235,7 +222,7 @@ export default function AddCustomerPage() {
                                                                 </button>
                                                             </div>
                                                         ) : (
-                                                            <div className="h-40 w-40 rounded-full border-2 border-dashed flex flex-col items-center justify-center bg-gray-50 text-muted-foreground hover:bg-gray-100 transition-colors relative cursor-pointer gap-2">
+                                                            <div className="h-32 w-32 rounded-full border-2 border-dashed flex flex-col items-center justify-center bg-gray-50 text-muted-foreground hover:bg-gray-100 transition-colors relative cursor-pointer gap-2">
                                                                 {imageLoading ? (
                                                                     <Loader2 className="h-8 w-8 animate-spin" />
                                                                 ) : (
@@ -277,10 +264,10 @@ export default function AddCustomerPage() {
                                         name="status"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Trạng thái hoạt động</FormLabel>
+                                                <FormLabel className="text-xs">Trạng thái hoạt động</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl>
-                                                        <SelectTrigger>
+                                                        <SelectTrigger className="h-8 text-xs">
                                                             <SelectValue placeholder="Chọn trạng thái" />
                                                         </SelectTrigger>
                                                     </FormControl>
@@ -298,10 +285,10 @@ export default function AddCustomerPage() {
                                         name="rank"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Hạng thành viên</FormLabel>
+                                                <FormLabel className="text-xs">Hạng thành viên</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl>
-                                                        <SelectTrigger>
+                                                        <SelectTrigger className="h-8 text-xs">
                                                             <SelectValue placeholder="Chọn hạng" />
                                                         </SelectTrigger>
                                                     </FormControl>
@@ -333,12 +320,6 @@ export default function AddCustomerPage() {
                 </form>
             </Form>
 
-            <ToastNotification
-                isOpen={toastState.isOpen}
-                onClose={() => setToastState(prev => ({ ...prev, isOpen: false }))}
-                message={toastState.message}
-                type={toastState.type}
-            />
         </div >
     );
 }

@@ -1,39 +1,60 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { DashboardStats } from "@/components/admin/dashboard/dashboard-stats";
+import { RevenueChart } from "@/components/admin/dashboard/revenue-chart";
+import { RecentOrders } from "@/components/admin/dashboard/recent-orders";
+
+import { MOCK_ORDERS } from "@/lib/mock-data/orders";
+
+// Mock Data
+const MOCK_STATS = {
+    totalRevenue: 245000000,
+    totalOrders: 156,
+    lowStockProducts: 12,
+    newCustomers: 48,
+};
+
+// Map shared mock data to the format expected by RecentOrders
+// (Though we should probably update RecentOrders props to match Order type directly in the future)
+const MOCK_RECENT_ORDERS = MOCK_ORDERS.map(order => ({
+    id: order.id,
+    customerName: order.customer.name,
+    customerEmail: order.customer.email,
+    totalAmount: order.totalAmount,
+    status: order.status,
+    createdAt: order.createdAt,
+}));
+
 export default function AdminDashboard() {
+    // Simulate loading for better UX
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setLoading(false);
+        }, 800);
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (loading) {
+        return <div className="p-8 text-center text-gray-500">Đang tải biểu đồ...</div>;
+    }
+
     return (
         <div className="space-y-6">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">Dashboard</h1>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {/* Placeholder Stats */}
-                <div className="rounded-xl border bg-white p-6 shadow-sm">
-                    <h3 className="text-sm font-medium text-gray-500">Tổng doanh thu</h3>
-                    <div className="mt-2 text-2xl font-bold">45.231.000 đ</div>
-                    <p className="text-xs text-green-500 mt-1">+20.1% so với tháng trước</p>
-                </div>
-                <div className="rounded-xl border bg-white p-6 shadow-sm">
-                    <h3 className="text-sm font-medium text-gray-500">Đơn hàng mới</h3>
-                    <div className="mt-2 text-2xl font-bold">+573</div>
-                    <p className="text-xs text-green-500 mt-1">+180 so với tuần trước</p>
-                </div>
-                <div className="rounded-xl border bg-white p-6 shadow-sm">
-                    <h3 className="text-sm font-medium text-gray-500">Sản phẩm tồn kho thấp</h3>
-                    <div className="mt-2 text-2xl font-bold">12</div>
-                    <p className="text-xs text-red-500 mt-1">Cần nhập thêm hàng</p>
-                </div>
-                <div className="rounded-xl border bg-white p-6 shadow-sm">
-                    <h3 className="text-sm font-medium text-gray-500">Khách hàng mới</h3>
-                    <div className="mt-2 text-2xl font-bold">+24</div>
-                    <p className="text-xs text-green-500 mt-1">+4 so với hôm qua</p>
-                </div>
-            </div>
+            <DashboardStats
+                totalRevenue={MOCK_STATS.totalRevenue}
+                totalOrders={MOCK_STATS.totalOrders}
+                lowStockProducts={MOCK_STATS.lowStockProducts}
+                newCustomers={MOCK_STATS.newCustomers}
+            />
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <div className="col-span-4 rounded-xl border bg-white p-6 shadow-sm min-h-[300px] flex items-center justify-center text-gray-400">
-                    Biểu đồ doanh thu (Coming Soon)
-                </div>
-                <div className="col-span-3 rounded-xl border bg-white p-6 shadow-sm min-h-[300px] flex items-center justify-center text-gray-400">
-                    Đơn hàng gần đây (Coming Soon)
-                </div>
+                <RevenueChart />
+                <RecentOrders orders={MOCK_RECENT_ORDERS} />
             </div>
         </div>
     );

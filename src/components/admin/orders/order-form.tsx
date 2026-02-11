@@ -41,7 +41,7 @@ import { MOCK_PRODUCTS } from "@/lib/mock-data/products";
 import { formatCurrency } from "@/lib/utils";
 import { Plus, Trash2, Search, Check, ChevronsUpDown } from "lucide-react";
 import Image from "next/image";
-import ToastNotification from "@/components/ui/ToastNotification";
+import { showSuccessToast, showErrorToast } from "@/lib/toast-utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -72,22 +72,6 @@ export function OrderForm() {
     const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
     const [pendingProduct, setPendingProduct] = useState<any>(null);
     const [selectedVariant, setSelectedVariant] = useState<any>(null);
-
-    // Toast state
-    const [toastState, setToastState] = useState<{
-        isOpen: boolean;
-        message: string;
-        type: 'success' | 'error' | 'warning';
-        title?: string;
-    }>({
-        isOpen: false,
-        message: '',
-        type: 'success',
-    });
-
-    const showToast = (message: string, type: 'success' | 'error' | 'warning', title?: string) => {
-        setToastState({ isOpen: true, message, type, title });
-    };
 
     // Calculate totals
     const subtotal = selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -162,20 +146,20 @@ export function OrderForm() {
 
     const handleSubmit = () => {
         if (!selectedCustomer) {
-            showToast("Vui lòng chọn khách hàng", "error", "Lỗi Validartion");
+            showErrorToast("Vui lòng chọn khách hàng");
             return;
         }
         if (selectedItems.length === 0) {
-            showToast("Vui lòng thêm sản phẩm vào đơn hàng", "error", "Lỗi Validation");
+            showErrorToast("Vui lòng thêm sản phẩm vào đơn hàng");
             return;
         }
         if (!shippingAddress) {
-            showToast("Vui lòng nhập địa chỉ giao hàng", "error", "Lỗi Validation");
+            showErrorToast("Vui lòng nhập địa chỉ giao hàng");
             return;
         }
 
         // Mock submission
-        showToast("Tạo đơn hàng thành công!", "success", "Thành công");
+        showSuccessToast("Tạo đơn hàng thành công!");
 
         // Delay navigation to allow toast to be seen
         setTimeout(() => {
@@ -210,14 +194,14 @@ export function OrderForm() {
                                                 {MOCK_PRODUCTS.map((product) => (
                                                     <CommandItem
                                                         key={product.id}
-                                                        value={product.name}
+                                                        value={product.name || ""}
                                                         onSelect={() => handleProductSelect(product.id)}
                                                     >
                                                         <div className="flex items-center gap-2 w-full">
                                                             <div className="relative h-8 w-8 rounded overflow-hidden">
                                                                 <Image
-                                                                    src={product.thumbnail}
-                                                                    alt={product.name}
+                                                                    src={product.thumbnail || ""}
+                                                                    alt={product.name || ""}
                                                                     fill
                                                                     className="object-cover"
                                                                 />
@@ -499,14 +483,6 @@ export function OrderForm() {
                     </CardFooter>
                 </Card>
             </div>
-
-            <ToastNotification
-                isOpen={toastState.isOpen}
-                onClose={() => setToastState(prev => ({ ...prev, isOpen: false }))}
-                message={toastState.message}
-                type={toastState.type}
-                title={toastState.title}
-            />
         </div >
     );
 }

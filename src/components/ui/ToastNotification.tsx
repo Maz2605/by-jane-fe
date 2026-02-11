@@ -1,150 +1,127 @@
-import React, { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { X, CheckCircle2, AlertCircle, AlertTriangle, Info } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // Helper để merge class tailwind
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Định nghĩa các loại thông báo
-type ToastType = 'success' | 'error' | 'warning';
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 interface ToastNotificationProps {
-  isOpen: boolean;
-  onClose: () => void;
+  visible: boolean; // Received from react-hot-toast's t.visible
   message: string;
-  title?: string;
   type?: ToastType;
-  duration?: number;
-  action?: React.ReactNode; // <--- MỚI: Thêm prop này để nhận nút bấm
+  onClose?: () => void; // Optional, defaults to toast.dismiss
+  id?: string; // To dismiss specific toast if needed
 }
 
-// Config màu sắc và icon (Giữ nguyên bản gốc bạn thích)
+// Config màu sắc và icon
 const toastConfig = {
   success: {
     bgColor: 'bg-emerald-50',
     borderColor: 'border-emerald-200',
     textColor: 'text-emerald-800',
     iconColor: 'text-emerald-500',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-      </svg>
-    ),
+    icon: <CheckCircle2 className="w-6 h-6" />,
+    title: 'Thành công'
   },
   error: {
     bgColor: 'bg-red-50',
     borderColor: 'border-red-200',
     textColor: 'text-red-800',
     iconColor: 'text-red-500',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    ),
+    icon: <AlertCircle className="w-6 h-6" />,
+    title: 'Lỗi'
   },
   warning: {
     bgColor: 'bg-amber-50',
     borderColor: 'border-amber-200',
     textColor: 'text-amber-800',
     iconColor: 'text-amber-500',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-      </svg>
-    ),
+    icon: <AlertTriangle className="w-6 h-6" />,
+    title: 'Cảnh báo'
   },
+  info: {
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
+    textColor: 'text-blue-800',
+    iconColor: 'text-blue-500',
+    icon: <Info className="w-6 h-6" />,
+    title: 'Thông tin'
+  }
 };
 
 const ToastNotification: React.FC<ToastNotificationProps> = ({
-  isOpen,
-  onClose,
+  visible,
   message,
-  title,
   type = 'success',
-  duration = 3000,
-  action, // <--- Destructure action
+  onClose,
+  id,
 }) => {
-  const [isMounted, setIsMounted] = useState(false);
+  const config = toastConfig[type];
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // Logic tự động đóng: Nếu có action thì chờ lâu hơn (8s), không thì 3s
-  useEffect(() => {
-    if (isOpen) {
-      const autoCloseDuration = action ? 8000 : duration;
-      const timer = setTimeout(() => {
-        onClose();
-      }, autoCloseDuration);
-      return () => clearTimeout(timer);
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else if (id) {
+      toast.dismiss(id);
     }
-  }, [isOpen, duration, onClose, action]);
+  };
 
-  if (!isMounted) return null;
-
-  return createPortal(
+  return (
     <AnimatePresence>
-      {isOpen && (
+      {visible && (
         <motion.div
-          initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 20, opacity: 1 }}
-          exit={{ y: -100, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-          className="fixed top-0 left-0 right-0 z-[9999] flex justify-center pointer-events-none px-4"
+          initial={{ opacity: 0, y: -20, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -20, scale: 0.9 }}
+          transition={{
+            type: "spring",
+            stiffness: 200,
+            damping: 20,
+          }}
+          className={cn(
+            "pointer-events-auto flex w-full max-w-sm rounded-lg shadow-lg p-4",
+            config.bgColor,
+            config.borderColor,
+            "border"
+          )}
         >
-          <div
-            className={cn(
-              "pointer-events-auto flex items-start gap-3 rounded-lg border p-4 shadow-lg min-w-[320px] max-w-md backdrop-blur-sm",
-              toastConfig[type].bgColor,
-              toastConfig[type].borderColor
-            )}
-          >
-            {/* Icon */}
-            <div className={cn("flex-shrink-0 mt-0.5", toastConfig[type].iconColor)}>
-              {toastConfig[type].icon}
+          <div className="flex-shrink-0 pt-0.5">
+            <div className={cn("rounded-full p-1", config.iconColor.replace('text-', 'bg-').replace('500', '100'))}>
+              {config.icon}
             </div>
-
-            {/* Content Container */}
-            <div className="flex-1 min-w-0">
-              {/* Title & Message */}
-              <div>
-                {title && (
-                  <h3 className={cn("text-sm font-bold", toastConfig[type].textColor)}>
-                    {title}
-                  </h3>
-                )}
-                <p className={cn("text-sm mt-1 leading-relaxed", toastConfig[type].textColor, !title && "font-medium")}>
-                  {message}
-                </p>
-              </div>
-
-              {/* --- ACTION AREA (Nút bấm hiển thị ở đây) --- */}
-              {action && (
-                <div className="mt-3 animate-enter">
-                  {action}
-                </div>
-              )}
-            </div>
-
-            {/* Close Button */}
+          </div>
+          <div className="ml-3 flex-1">
+            <p className={cn("text-sm font-semibold", config.textColor)}>
+              {config.title}
+            </p>
+            <p className={cn("mt-1 text-sm font-medium opacity-90", config.textColor)}>
+              {message}
+            </p>
+          </div>
+          <div className="ml-4 flex flex-shrink-0">
             <button
-              onClick={onClose}
-              className={cn("flex-shrink-0 -mr-1 -mt-1 p-1 rounded-md hover:bg-black/10 transition-colors", toastConfig[type].textColor)}
+              type="button"
+              className={cn(
+                "inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2",
+                config.textColor,
+                "hover:bg-black/5"
+              )}
+              onClick={handleClose}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <span className="sr-only">Close</span>
+              <X className="w-4 h-4" />
             </button>
           </div>
         </motion.div>
       )}
-    </AnimatePresence>,
-    document.body
+    </AnimatePresence>
   );
 };
 

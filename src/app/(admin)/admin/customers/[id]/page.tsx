@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lock, Copy, Check, RefreshCw } from "lucide-react";
 import { useState } from "react";
-import ToastNotification from "@/components/ui/ToastNotification";
+import { showSuccessToast } from "@/lib/toast-utils";
 
 export default function CustomerDetailPage() {
     const params = useParams();
@@ -40,15 +40,6 @@ export default function CustomerDetailPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
     const [dialogStep, setDialogStep] = useState<'confirm' | 'success'>('confirm');
-    const [toastState, setToastState] = useState<{
-        isOpen: boolean;
-        message: string;
-        type: 'success' | 'error' | 'warning';
-    }>({
-        isOpen: false,
-        message: '',
-        type: 'success',
-    });
 
     const generatePassword = () => {
         const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
@@ -72,11 +63,7 @@ export default function CustomerDetailPage() {
 
     const handleStatusChange = (value: string) => {
         setStatus(value);
-        setToastState({
-            isOpen: true,
-            message: `Đã cập nhật trạng thái thành: ${value === 'active' ? 'Đang hoạt động' : 'Đã chặn'}`,
-            type: "success"
-        });
+        showSuccessToast(`Đã cập nhật trạng thái thành: ${value === 'active' ? 'Đang hoạt động' : 'Đã chặn'}`);
     };
 
     const handleDeleteCustomer = () => {
@@ -92,11 +79,7 @@ export default function CustomerDetailPage() {
         setTimeout(() => {
             setIsDeleting(false);
             setIsDeleteDialogOpen(false);
-            setToastState({
-                isOpen: true,
-                message: "Đã xóa khách hàng thành công",
-                type: "success"
-            });
+            showSuccessToast("Đã xóa khách hàng thành công");
             // Redirect after a short delay
             setTimeout(() => {
                 router.push('/admin/customers');
@@ -145,7 +128,7 @@ export default function CustomerDetailPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" asChild>
                     <Link href="/admin/customers">
@@ -181,19 +164,19 @@ export default function CustomerDetailPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Left Column: Customer Profile */}
                 <Card className="lg:col-span-1 h-fit">
                     <CardHeader className="text-center pb-2">
                         <div className="mx-auto mb-4">
-                            <Avatar className="h-24 w-24">
+                            <Avatar className="h-20 w-20">
                                 <AvatarImage src={customer.avatar} alt={customer.name} />
                                 <AvatarFallback className="text-2xl bg-primary/10 text-primary">
                                     {customer.name.charAt(0).toUpperCase()}
                                 </AvatarFallback>
                             </Avatar>
                         </div>
-                        <CardTitle className="text-xl">{customer.name}</CardTitle>
+                        <CardTitle className="text-lg">{customer.name}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4 pt-4">
                         <div className="flex items-center gap-3 text-sm">
@@ -342,33 +325,33 @@ export default function CustomerDetailPage() {
                 </Card>
 
                 {/* Right Column: Stats & Order History */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className="lg:col-span-2 space-y-4">
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <Card>
-                            <CardContent className="p-6 flex items-center gap-4">
+                            <CardContent className="p-4 flex items-center gap-4">
                                 <div className="p-3 bg-blue-100 text-blue-600 rounded-full">
                                     <ShoppingBag className="h-6 w-6" />
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Tổng đơn hàng</p>
-                                    <h3 className="text-2xl font-bold">{customer.totalOrders}</h3>
+                                    <h3 className="text-xl font-bold">{customer.totalOrders}</h3>
                                 </div>
                             </CardContent>
                         </Card>
                         <Card>
-                            <CardContent className="p-6 flex items-center gap-4">
+                            <CardContent className="p-4 flex items-center gap-4">
                                 <div className="p-3 bg-green-100 text-green-600 rounded-full">
                                     <DollarSign className="h-6 w-6" />
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Tổng chi tiêu</p>
-                                    <h3 className="text-2xl font-bold">{formatCurrency(customer.totalSpent)}</h3>
+                                    <h3 className="text-xl font-bold">{formatCurrency(customer.totalSpent)}</h3>
                                 </div>
                             </CardContent>
                         </Card>
                         <Card>
-                            <CardContent className="p-6 flex items-center gap-4">
+                            <CardContent className="p-4 flex items-center gap-4">
                                 <div className="p-3 bg-orange-100 text-orange-600 rounded-full">
                                     <Calendar className="h-6 w-6" />
                                 </div>
@@ -393,18 +376,18 @@ export default function CustomerDetailPage() {
                                     <table className="w-full text-sm text-left">
                                         <thead className="bg-muted/50 text-muted-foreground font-medium">
                                             <tr>
-                                                <th className="p-4">Mã đơn</th>
-                                                <th className="p-4">Ngày đặt</th>
-                                                <th className="p-4">Trạng thái</th>
-                                                <th className="p-4 text-right">Tổng tiền</th>
-                                                <th className="p-4"></th>
+                                                <th className="p-3">Mã đơn</th>
+                                                <th className="p-3">Ngày đặt</th>
+                                                <th className="p-3">Trạng thái</th>
+                                                <th className="p-3 text-right">Tổng tiền</th>
+                                                <th className="p-3"></th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y">
                                             {customerOrders.map((order) => (
                                                 <tr key={order.id} className="hover:bg-muted/50 transition-colors">
-                                                    <td className="p-4 font-medium">{order.id}</td>
-                                                    <td className="p-4 text-muted-foreground">
+                                                    <td className="p-3 font-medium">{order.id}</td>
+                                                    <td className="p-3 text-muted-foreground">
                                                         {new Date(order.createdAt).toLocaleString('vi-VN', {
                                                             day: '2-digit',
                                                             month: '2-digit',
@@ -413,13 +396,13 @@ export default function CustomerDetailPage() {
                                                             minute: '2-digit'
                                                         })}
                                                     </td>
-                                                    <td className="p-4">
+                                                    <td className="p-3">
                                                         <OrderStatusBadge status={order.status} />
                                                     </td>
-                                                    <td className="p-4 text-right font-medium">
+                                                    <td className="p-3 text-right font-medium">
                                                         {formatCurrency(order.totalAmount)}
                                                     </td>
-                                                    <td className="p-4 text-right">
+                                                    <td className="p-3 text-right">
                                                         <Button variant="ghost" size="icon" asChild>
                                                             <Link href={`/admin/orders/${order.id}`}>
                                                                 <ExternalLink className="h-4 w-4" />
@@ -441,12 +424,6 @@ export default function CustomerDetailPage() {
                 </div>
             </div>
 
-            <ToastNotification
-                isOpen={toastState.isOpen}
-                onClose={() => setToastState(prev => ({ ...prev, isOpen: false }))}
-                message={toastState.message}
-                type={toastState.type}
-            />
         </div >
     );
 }

@@ -7,39 +7,26 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { CreditCard, Globe, Store, Truck, Save } from "lucide-react";
+import { CreditCard, Globe, Store, Truck, Save, Bell } from "lucide-react";
 import { useState } from "react";
-import ToastNotification from "@/components/ui/ToastNotification";
+import { showSuccessToast } from "@/lib/toast-utils";
 
 const settingsTabs = [
-    { id: "general", label: "Cài đặt chung", icon: Store },
     { id: "shipping", label: "Vận chuyển", icon: Truck },
     { id: "payment", label: "Thanh toán", icon: CreditCard },
+    { id: "notifications", label: "Thông báo", icon: Bell },
 ];
 
 export default function SettingsPage() {
-    const [activeTab, setActiveTab] = useState("general");
     const [loading, setLoading] = useState(false);
-    const [toastState, setToastState] = useState<{
-        isOpen: boolean;
-        message: string;
-        type: 'success' | 'error' | 'warning';
-    }>({
-        isOpen: false,
-        message: '',
-        type: 'success',
-    });
 
     const handleSave = () => {
         setLoading(true);
         setTimeout(() => {
             setLoading(false);
-            setToastState({
-                isOpen: true,
-                message: "Đã lưu cài đặt thành công",
-                type: "success"
-            });
+            showSuccessToast("Đã lưu cài đặt thành công");
         }, 1000);
     };
 
@@ -50,141 +37,145 @@ export default function SettingsPage() {
                 <p className="text-sm text-muted-foreground mt-1">Quản lý cấu hình cửa hàng</p>
             </div>
             <Separator />
-            <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
-                <aside className="-mx-4 lg:w-1/5">
-                    <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1">
-                        {settingsTabs.map((item) => (
-                            <Button
-                                key={item.id}
-                                variant="ghost"
-                                className={cn(
-                                    "justify-start hover:bg-transparent hover:underline",
-                                    activeTab === item.id ? "bg-muted hover:bg-muted" : "hover:bg-transparent hover:underline"
-                                )}
-                                onClick={() => setActiveTab(item.id)}
-                            >
-                                <item.icon className="mr-2 h-4 w-4" />
-                                {item.label}
+
+            <Tabs defaultValue="shipping" className="w-full">
+                <TabsList className="mb-8 w-full justify-start border-b rounded-none bg-transparent p-0 h-auto">
+                    {settingsTabs.map((tab) => (
+                        <TabsTrigger
+                            key={tab.id}
+                            value={tab.id}
+                            className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none hover:text-foreground"
+                        >
+                            <tab.icon className="mr-2 h-4 w-4" />
+                            {tab.label}
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
+
+
+
+                <TabsContent value="shipping" className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Vận chuyển</CardTitle>
+                            <CardDescription>Cấu hình phí vận chuyển và khu vực giao hàng.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Phí vận chuyển mặc định</Label>
+                                <div className="flex items-center space-x-2">
+                                    <Input type="number" defaultValue="30000" className="w-[200px]" />
+                                    <span className="text-sm text-muted-foreground">VND</span>
+                                </div>
+                                <p className="text-[0.8rem] text-muted-foreground">
+                                    Áp dụng cho tất cả đơn hàng nếu không có cấu hình khác.
+                                </p>
+                            </div>
+                        </CardContent>
+                        <CardFooter className="justify-end border-t px-6 py-4">
+                            <Button onClick={handleSave} disabled={loading} variant="orange">
+                                {loading ? "Đang lưu..." : "Lưu thay đổi"}
                             </Button>
-                        ))}
-                    </nav>
-                </aside>
-                <div className="flex-1 lg:max-w-2xl">
-                    {activeTab === "general" && (
-                        <div className="space-y-6">
-                            <div>
-                                <h3 className="text-lg font-medium">Thông tin cửa hàng</h3>
-                                <p className="text-sm text-muted-foreground">
-                                    Thông tin này sẽ hiển thị trên trang web và hóa đơn.
-                                </p>
-                            </div>
-                            <Separator />
-                            <div className="space-y-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="storeName">Tên cửa hàng</Label>
-                                    <Input id="storeName" defaultValue="ByJane Shop" />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="storeEmail">Email liên hệ</Label>
-                                    <Input id="storeEmail" defaultValue="contact@byjanestudio.com" />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="storePhone">Số điện thoại</Label>
-                                    <Input id="storePhone" defaultValue="0901234567" />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="storeAddress">Địa chỉ</Label>
-                                    <Textarea id="storeAddress" defaultValue="123 Đường Nguyễn Văn Cừ, Quận 5, TP.HCM" />
-                                </div>
-                            </div>
-                            <div className="flex justify-end">
-                                <Button onClick={handleSave} disabled={loading} variant="orange">
-                                    {loading ? "Đang lưu..." : "Lưu thay đổi"}
-                                </Button>
-                            </div>
-                        </div>
-                    )}
+                        </CardFooter>
+                    </Card>
+                </TabsContent>
 
-                    {activeTab === "shipping" && (
-                        <div className="space-y-6">
-                            <div>
-                                <h3 className="text-lg font-medium">Vận chuyển</h3>
-                                <p className="text-sm text-muted-foreground">
-                                    Cấu hình phí vận chuyển và khu vực giao hàng.
-                                </p>
-                            </div>
-                            <Separator />
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Phí vận chuyển mặc định</CardTitle>
-                                    <CardDescription>Áp dụng cho tất cả đơn hàng nếu không có cấu hình khác.</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-2">
-                                    <div className="flex items-center space-x-2">
-                                        <Input type="number" defaultValue="30000" className="w-[200px]" />
-                                        <span className="text-sm text-muted-foreground">VND</span>
+                <TabsContent value="payment" className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
+                    <div className="grid gap-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Phương thức thanh toán</CardTitle>
+                                <CardDescription>Quản lý các phương thức thanh toán được chấp nhận.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="flex items-center justify-between space-x-2 rounded-md border p-4">
+                                    <div className="space-y-1">
+                                        <Label htmlFor="cod" className="text-base">Thanh toán khi nhận hàng (COD)</Label>
+                                        <p className="text-sm text-muted-foreground">Khách hàng thanh toán tiền mặt khi nhận hàng.</p>
                                     </div>
-                                </CardContent>
-                            </Card>
-
-                            <div className="flex justify-end">
+                                    <Switch id="cod" defaultChecked className="data-[state=checked]:bg-orange-500" />
+                                </div>
+                                <div className="space-y-4 rounded-md border p-4">
+                                    <div className="flex items-center justify-between space-x-2">
+                                        <div className="space-y-1">
+                                            <Label htmlFor="bank" className="text-base">Chuyển khoản ngân hàng</Label>
+                                            <p className="text-sm text-muted-foreground">Khách hàng chuyển khoản qua ngân hàng.</p>
+                                        </div>
+                                        <Switch id="bank" defaultChecked className="data-[state=checked]:bg-orange-500" />
+                                    </div>
+                                    <div className="grid gap-2 pl-6 border-l-2 ml-1">
+                                        <Label>Thông tin tài khoản</Label>
+                                        <Textarea
+                                            placeholder="Nhập tên ngân hàng, số tài khoản, tên chủ tài khoản..."
+                                            defaultValue="Vietcombank - 0123456789 - NGUYEN VAN A"
+                                            className="min-h-[80px]"
+                                        />
+                                    </div>
+                                </div>
+                            </CardContent>
+                            <CardFooter className="justify-end border-t px-6 py-4">
                                 <Button onClick={handleSave} disabled={loading} variant="orange">
                                     {loading ? "Đang lưu..." : "Lưu thay đổi"}
                                 </Button>
+                            </CardFooter>
+                        </Card>
+                    </div>
+                </TabsContent>
+                <TabsContent value="notifications" className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Cấu hình thông báo</CardTitle>
+                            <CardDescription>Quản lý các thông báo email và hệ thống.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="space-y-4">
+                                <h4 className="text-sm font-medium">Thông báo Email</h4>
+                                <div className="space-y-4 rounded-md border p-4">
+                                    <div className="flex items-center justify-between space-x-2">
+                                        <div className="flex flex-col space-y-1">
+                                            <Label htmlFor="email-new-order" className="text-base font-normal">Đơn hàng mới</Label>
+                                            <span className="font-normal text-xs text-muted-foreground">Nhận email khi có khách hàng đặt hàng mới.</span>
+                                        </div>
+                                        <Switch id="email-new-order" defaultChecked className="data-[state=checked]:bg-orange-500" />
+                                    </div>
+                                    <div className="flex items-center justify-between space-x-2">
+                                        <div className="flex flex-col space-y-1">
+                                            <Label htmlFor="email-order-status" className="text-base font-normal">Cập nhật trạng thái đơn hàng</Label>
+                                            <span className="font-normal text-xs text-muted-foreground">Nhận email khi trạng thái đơn hàng thay đổi.</span>
+                                        </div>
+                                        <Switch id="email-order-status" defaultChecked className="data-[state=checked]:bg-orange-500" />
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    )}
 
-                    {activeTab === "payment" && (
-                        <div className="space-y-6">
-                            <div>
-                                <h3 className="text-lg font-medium">Thanh toán</h3>
-                                <p className="text-sm text-muted-foreground">
-                                    Quản lý các phương thức thanh toán được chấp nhận.
-                                </p>
+                            <div className="space-y-4">
+                                <h4 className="text-sm font-medium">Thông báo Hệ thống</h4>
+                                <div className="space-y-4 rounded-md border p-4">
+                                    <div className="flex items-center justify-between space-x-2">
+                                        <div className="flex flex-col space-y-1">
+                                            <Label htmlFor="sys-low-stock" className="text-base font-normal">Cảnh báo tồn kho thấp</Label>
+                                            <span className="font-normal text-xs text-muted-foreground">Thông báo hiện trên dashboard khi sản phẩm sắp hết hàng.</span>
+                                        </div>
+                                        <Switch id="sys-low-stock" defaultChecked className="data-[state=checked]:bg-orange-500" />
+                                    </div>
+                                    <div className="flex items-center justify-between space-x-2">
+                                        <div className="flex flex-col space-y-1">
+                                            <Label htmlFor="sys-new-customer" className="text-base font-normal">Khách hàng mới</Label>
+                                            <span className="font-normal text-xs text-muted-foreground">Thông báo khi có thành viên mới đăng ký.</span>
+                                        </div>
+                                        <Switch id="sys-new-customer" defaultChecked className="data-[state=checked]:bg-orange-500" />
+                                    </div>
+                                </div>
                             </div>
-                            <Separator />
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Thanh toán khi nhận hàng (COD)</CardTitle>
-                                </CardHeader>
-                                <CardContent className="flex items-center space-x-2 justify-between">
-                                    <Label htmlFor="cod" className="flex flex-col space-y-1">
-                                        <span>Kích hoạt</span>
-                                    </Label>
-                                    <Switch id="cod" defaultChecked />
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Chuyển khoản ngân hàng</CardTitle>
-                                </CardHeader>
-                                <CardContent className="flex items-center space-x-2 justify-between">
-                                    <Label htmlFor="bank" className="flex flex-col space-y-1">
-                                        <span>Kích hoạt</span>
-                                    </Label>
-                                    <Switch id="bank" defaultChecked />
-                                </CardContent>
-                                <CardContent className="border-t pt-4 space-y-2">
-                                    <Label>Thông tin tài khoản</Label>
-                                    <Textarea placeholder="Nhập tên ngân hàng, số tài khoản, tên chủ tài khoản..." defaultValue="Vietcombank - 0123456789 - NGUYEN VAN A" />
-                                </CardContent>
-                            </Card>
-                            <div className="flex justify-end">
-                                <Button onClick={handleSave} disabled={loading} variant="orange">
-                                    {loading ? "Đang lưu..." : "Lưu thay đổi"}
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-            <ToastNotification
-                isOpen={toastState.isOpen}
-                onClose={() => setToastState(prev => ({ ...prev, isOpen: false }))}
-                message={toastState.message}
-                type={toastState.type}
-            />
+                        </CardContent>
+                        <CardFooter className="justify-end border-t px-6 py-4">
+                            <Button onClick={handleSave} disabled={loading} variant="orange">
+                                {loading ? "Đang lưu..." : "Lưu thay đổi"}
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </TabsContent>
+            </Tabs>
         </div >
     );
 }

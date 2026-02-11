@@ -11,7 +11,8 @@ import {
     Settings,
     LogOut,
     Newspaper,
-    Ticket
+    Ticket,
+    Bell
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ const sidebarItems = [
     { href: "/admin/customers", label: "Khách hàng", icon: Users },
     { href: "/admin/news", label: "Tin tức", icon: Newspaper },
     { href: "/admin/vouchers", label: "Mã giảm giá", icon: Ticket },
+    { href: "/admin/notifications", label: "Thông báo", icon: Bell },
     { href: "/admin/settings", label: "Cài đặt", icon: Settings },
 ];
 

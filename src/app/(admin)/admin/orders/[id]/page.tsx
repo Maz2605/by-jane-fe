@@ -9,6 +9,7 @@ import { ArrowLeft, MapPin, Phone, User } from "lucide-react";
 import Link from "next/link";
 import { notFound, useParams } from "next/navigation";
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/admin/orders/order-status-badge";
+import { OrderStatusSelect } from "@/components/admin/orders/order-status-select";
 import Image from "next/image";
 
 export default function OrderDetailPage() {
@@ -30,7 +31,7 @@ export default function OrderDetailPage() {
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-4">
-                <Link href="/admin/orders">
+                <Link href="/admin/orders" className="print:hidden">
                     <Button variant="outline" size="icon">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
@@ -43,9 +44,25 @@ export default function OrderDetailPage() {
                         <OrderStatusBadge status={order.status} />
                     </div>
                 </div>
-                <div className="ml-auto flex items-center gap-2">
-                    <Button variant="outline">In hóa đơn</Button>
-                    <Button variant="orange">Cập nhật trạng thái</Button>
+                <div className="ml-auto flex items-center gap-2 print:hidden">
+                    <Button
+                        variant="outline"
+                        onClick={() => window.print()}
+                    >
+                        In hóa đơn
+                    </Button>
+                    <OrderStatusSelect
+                        currentStatus={order.status}
+                        onStatusChange={async (newStatus) => {
+                            // Mock API Call
+                            return new Promise((resolve) => {
+                                setTimeout(() => {
+                                    console.log(`Updated status to: ${newStatus}`);
+                                    resolve();
+                                }, 1000);
+                            });
+                        }}
+                    />
                 </div>
             </div>
 
@@ -160,3 +177,4 @@ export default function OrderDetailPage() {
         </div>
     );
 }
+

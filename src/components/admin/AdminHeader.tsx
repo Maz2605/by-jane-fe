@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Menu, Search } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -11,6 +11,10 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { mockNotifications } from "@/lib/mock-data/notifications";
+import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
 
 export default function AdminHeader() {
     return (
@@ -21,15 +25,7 @@ export default function AdminHeader() {
                     <Menu className="h-5 w-5" />
                 </Button>
 
-                {/* Search Placeholder */}
-                <div className="relative hidden md:block">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                    <input
-                        type="text"
-                        placeholder="Tìm kiếm..."
-                        className="pl-9 h-9 w-64 rounded-md border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-1 focus:ring-[#FF5E4D]"
-                    />
-                </div>
+                {/* Search removed as requested */}
 
                 {/* Back to Shop Link */}
                 <a
@@ -43,40 +39,52 @@ export default function AdminHeader() {
             </div>
 
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="h-5 w-5 text-gray-500" />
-                    <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border border-white"></span>
-                </Button>
-
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                            <Avatar className="h-9 w-9">
-                                <AvatarImage src="/placeholder-avatar.jpg" alt="@user" />
-                                <AvatarFallback>AD</AvatarFallback>
-                            </Avatar>
+                        <Button variant="ghost" size="icon" className="relative rounded-full">
+                            <Bell className="h-5 w-5 text-gray-500" />
+                            {mockNotifications.filter(n => !n.isRead).length > 0 && (
+                                <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border border-white"></span>
+                            )}
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
-                        <DropdownMenuLabel className="font-normal">
-                            <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-medium leading-none">Admin User</p>
-                                <p className="text-xs leading-none text-muted-foreground">admin@byjane.com</p>
-                            </div>
+                    <DropdownMenuContent align="end" className="w-80 p-0">
+                        <DropdownMenuLabel className="px-4 py-3 font-semibold border-b flex justify-between items-center">
+                            <span>Thông báo</span>
+                            <span className="text-xs font-normal text-muted-foreground">{mockNotifications.filter(n => !n.isRead).length} chưa đọc</span>
                         </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                            Hồ sơ
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            Cài đặt
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600 focus:text-red-600">
-                            Đăng xuất
-                        </DropdownMenuItem>
+                        <div className="max-h-[300px] overflow-y-auto">
+                            {mockNotifications.slice(0, 5).map((notification) => (
+                                <DropdownMenuItem key={notification.id} className="flex flex-col items-start gap-1 p-3 cursor-pointer border-b last:border-0 rounded-none focus:bg-muted/50" asChild>
+                                    <Link href={notification.link || "#"}>
+                                        <div className="flex justify-between w-full">
+                                            <span className={`font-medium text-sm ${!notification.isRead ? "text-foreground" : "text-muted-foreground"}`}>
+                                                {notification.title}
+                                            </span>
+                                            {!notification.isRead && <span className="h-1.5 w-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></span>}
+                                        </div>
+                                        <span className="text-xs text-muted-foreground line-clamp-1">{notification.description}</span>
+                                        <span className="text-[10px] text-muted-foreground mt-1">
+                                            {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: vi })}
+                                        </span>
+                                    </Link>
+                                </DropdownMenuItem>
+                            ))}
+                        </div>
+                        <div className="p-2 border-t text-center">
+                            <Link href="/admin/notifications">
+                                <Button variant="link" size="sm" className="h-auto p-0 text-xs text-muted-foreground w-full">Xem tất cả</Button>
+                            </Link>
+                        </div>
                     </DropdownMenuContent>
                 </DropdownMenu>
+
+                <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center border select-none">
+                    <Avatar className="h-9 w-9 cursor-default pointer-events-none">
+                        <AvatarImage src="/placeholder-avatar.jpg" alt="@user" />
+                        <AvatarFallback>AD</AvatarFallback>
+                    </Avatar>
+                </div>
             </div>
         </header>
     );

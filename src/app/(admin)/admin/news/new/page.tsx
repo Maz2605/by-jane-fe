@@ -29,7 +29,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import ImageCropper from "@/components/ui/ImageCropper";
-import ToastNotification from "@/components/ui/ToastNotification";
+import { showSuccessToast } from "@/lib/toast-utils";
 import {
     Dialog,
     DialogContent,
@@ -67,15 +67,6 @@ export default function AddNewsPage() {
     const [imageLoading, setImageLoading] = useState(false);
     const [cropImage, setCropImage] = useState<string | null>(null);
     const [croppedThumbnail, setCroppedThumbnail] = useState<string | null>(null);
-    const [toastState, setToastState] = useState<{
-        isOpen: boolean;
-        message: string;
-        type: 'success' | 'error' | 'warning';
-    }>({
-        isOpen: false,
-        message: '',
-        type: 'success',
-    });
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -120,11 +111,7 @@ export default function AddNewsPage() {
 
     function onSubmit(values: z.infer<typeof formSchema>) {
         console.log("Creating news:", values);
-        setToastState({
-            isOpen: true,
-            message: "Tạo bài viết mới thành công!",
-            type: "success"
-        });
+        showSuccessToast("Tạo bài viết mới thành công!");
         setTimeout(() => {
             router.push("/admin/news");
         }, 1000);
@@ -503,12 +490,6 @@ export default function AddNewsPage() {
                 </form>
             </Form>
 
-            <ToastNotification
-                isOpen={toastState.isOpen}
-                onClose={() => setToastState(prev => ({ ...prev, isOpen: false }))}
-                message={toastState.message}
-                type={toastState.type}
-            />
         </div>
     );
 }

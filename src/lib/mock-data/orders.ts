@@ -1,4 +1,4 @@
-export type OrderStatus = 'pending' | 'processing' | 'shipping' | 'completed' | 'cancelled';
+export type OrderStatus = 'pending' | 'processing' | 'shipping' | 'completed' | 'cancelled' | 'returned' | 'refunding';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
 export interface OrderItem {
@@ -164,5 +164,85 @@ export const MOCK_ORDERS: Order[] = [
         paymentMethod: "Momo",
         createdAt: "2024-03-21T14:30:00Z",
         shippingAddress: "222 Đường Lê Duẩn, Quận 1, TP.HCM"
+    },
+    {
+        id: "ORD-7834",
+        customer: {
+            id: "CUS-006",
+            name: "Đỗ Thị F",
+            email: "dothif@example.com",
+            phone: "0945678901"
+        },
+        items: [],
+        totalAmount: 150000,
+        status: "pending",
+        paymentStatus: "pending",
+        paymentMethod: "COD",
+        createdAt: "2024-03-22T09:00:00Z",
+        shippingAddress: "333 Đường Hai Bà Trưng, Quận 1, TP.HCM"
+    },
+    {
+        id: "ORD-7835",
+        customer: {
+            id: "CUS-007",
+            name: "Vũ Văn G",
+            email: "vuvang@example.com",
+            phone: "0956789012"
+        },
+        items: [],
+        totalAmount: 4500000,
+        status: "shipping",
+        paymentStatus: "paid",
+        paymentMethod: "Bank Transfer",
+        createdAt: "2024-03-22T14:20:00Z",
+        shippingAddress: "444 Đường Điện Biên Phủ, Bình Thạnh, TP.HCM"
+    },
+    {
+        id: "ORD-7836",
+        customer: {
+            id: "CUS-008",
+            name: "Ngô Thị H",
+            email: "ngothih@example.com",
+            phone: "0967890123"
+        },
+        items: [],
+        totalAmount: 900000,
+        status: "completed",
+        paymentStatus: "paid",
+        paymentMethod: "COD",
+        createdAt: "2024-03-23T10:10:00Z",
+        shippingAddress: "555 Đường Cách Mạng Tháng 8, Quận 3, TP.HCM"
+    },
+    {
+        id: "ORD-7837",
+        customer: {
+            id: "CUS-009",
+            name: "Bùi Văn I",
+            email: "buivani@example.com",
+            phone: "0978901234"
+        },
+        items: [],
+        totalAmount: 250000,
+        status: "cancelled",
+        paymentStatus: "refunded",
+        paymentMethod: "Momo",
+        createdAt: "2024-03-23T16:00:00Z",
+        shippingAddress: "666 Đường Nguyễn Thị Minh Khai, Quận 1, TP.HCM"
+    },
+    {
+        id: "ORD-7838",
+        customer: {
+            id: "CUS-010",
+            name: "Lý Thị K",
+            email: "lythik@example.com",
+            phone: "0989012345"
+        },
+        items: [],
+        totalAmount: 1800000,
+        status: "pending",
+        paymentStatus: "pending",
+        paymentMethod: "COD",
+        createdAt: "2024-03-24T08:30:00Z",
+        shippingAddress: "777 Đường Nam Kỳ Khởi Nghĩa, Quận 3, TP.HCM"
     }
 ];

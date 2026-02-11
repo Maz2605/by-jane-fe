@@ -29,7 +29,7 @@ import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import ImageCropper from "@/components/ui/ImageCropper";
-import ToastNotification from "@/components/ui/ToastNotification";
+import { showSuccessToast } from "@/lib/toast-utils";
 import { MOCK_NEWS } from "@/lib/mock-data/news";
 import {
     Dialog,
@@ -75,15 +75,6 @@ export default function EditNewsPage() {
     const [imageLoading, setImageLoading] = useState(false);
     const [cropImage, setCropImage] = useState<string | null>(null);
     const [croppedThumbnail, setCroppedThumbnail] = useState<string | null>(null);
-    const [toastState, setToastState] = useState<{
-        isOpen: boolean;
-        message: string;
-        type: 'success' | 'error' | 'warning';
-    }>({
-        isOpen: false,
-        message: '',
-        type: 'success',
-    });
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -134,11 +125,7 @@ export default function EditNewsPage() {
 
     function onSubmit(values: z.infer<typeof formSchema>) {
         console.log("Updating news:", { id, ...values });
-        setToastState({
-            isOpen: true,
-            message: "Cập nhật bài viết thành công!",
-            type: "success"
-        });
+        showSuccessToast("Cập nhật bài viết thành công!");
         setTimeout(() => {
             router.push("/admin/news");
         }, 1000);
@@ -545,12 +532,6 @@ export default function EditNewsPage() {
                 </form>
             </Form>
 
-            <ToastNotification
-                isOpen={toastState.isOpen}
-                onClose={() => setToastState(prev => ({ ...prev, isOpen: false }))}
-                message={toastState.message}
-                type={toastState.type}
-            />
         </div>
     );
 }
